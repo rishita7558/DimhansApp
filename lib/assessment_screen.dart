@@ -1,0 +1,299 @@
+import 'package:flutter/material.dart';
+import 'package:dimhans_app/learn_screen.dart'; // Added import for LearnScreen
+import 'package:url_launcher/url_launcher.dart';
+
+class AssessmentScreen extends StatefulWidget {
+  const AssessmentScreen({super.key});
+
+  @override
+  State<AssessmentScreen> createState() => _AssessmentScreenState();
+}
+
+class _AssessmentScreenState extends State<AssessmentScreen> {
+  int _step = 0;
+  final _formKey = GlobalKey<FormState>();
+  final Map<String, dynamic> _answers = {
+    'q1': null,
+    'q2': null,
+    'q3': '',
+    'q4': <String>[],
+    'q5': null,
+  };
+
+  final List<String> _reasons = [
+    'Peer Pressure',
+    'Recreation',
+    'Financial Issues',
+    'Personal Reasons',
+    'Family Issues',
+    'Friends Pressure',
+    'Work Pressure',
+    'Stress',
+    'Tension',
+    'Sleep Issues',
+    'Other',
+  ];
+
+  void _next() {
+    if (_step == 2) {
+      if (_formKey.currentState?.validate() ?? false) {
+        setState(() => _step++);
+      }
+    } else {
+      setState(() => _step++);
+    }
+  }
+
+  void _back() {
+    if (_step > 0) setState(() => _step--);
+  }
+
+  Widget _buildStep() {
+    switch (_step) {
+      case 0:
+        return _questionStep(
+          'Do you consume alcohol?',
+          Column(
+            children: [
+              RadioListTile<String>(
+                title: const Text('Yes'),
+                value: 'Yes',
+                groupValue: _answers['q1'],
+                onChanged: (val) => setState(() => _answers['q1'] = val),
+              ),
+              RadioListTile<String>(
+                title: const Text('No'),
+                value: 'No',
+                groupValue: _answers['q1'],
+                onChanged: (val) => setState(() => _answers['q1'] = val),
+              ),
+            ],
+          ),
+          onNext: _answers['q1'] != null ? _next : null,
+          isFirst: true,
+        );
+      case 1:
+        return _questionStep(
+          'Your Gender',
+          Column(
+            children: [
+              RadioListTile<String>(
+                title: const Text('Male'),
+                value: 'Male',
+                groupValue: _answers['q2'],
+                onChanged: (val) => setState(() => _answers['q2'] = val),
+              ),
+              RadioListTile<String>(
+                title: const Text('Female'),
+                value: 'Female',
+                groupValue: _answers['q2'],
+                onChanged: (val) => setState(() => _answers['q2'] = val),
+              ),
+              RadioListTile<String>(
+                title: const Text('Other'),
+                value: 'Other',
+                groupValue: _answers['q2'],
+                onChanged: (val) => setState(() => _answers['q2'] = val),
+              ),
+            ],
+          ),
+          onNext: _answers['q2'] != null ? _next : null,
+          onBack: _back,
+        );
+      case 2:
+        return _questionStep(
+          'Your Age',
+          Form(
+            key: _formKey,
+            child: TextFormField(
+              initialValue: _answers['q3'],
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(hintText: 'Enter your age'),
+              onChanged: (val) => setState(() => _answers['q3'] = val),
+              validator: (val) {
+                if (val == null || val.isEmpty) return 'Please enter your age';
+                final age = int.tryParse(val);
+                if (age == null || age < 0 || age > 120) return 'Enter a valid age';
+                return null;
+              },
+            ),
+          ),
+          onNext: (_answers['q3'] != null && _answers['q3'].toString().isNotEmpty) ? _next : null,
+          onBack: _back,
+        );
+      case 3:
+        return _questionStep(
+          'What made you consume alcohol?',
+          Column(
+            children: _reasons.map((opt) => CheckboxListTile(
+              title: Text(opt),
+              value: (_answers['q4'] as List<String>).contains(opt),
+              onChanged: (val) {
+                setState(() {
+                  if (val == true) {
+                    (_answers['q4'] as List<String>).add(opt);
+                  } else {
+                    (_answers['q4'] as List<String>).remove(opt);
+                  }
+                });
+              },
+            )).toList(),
+          ),
+          onNext: (_answers['q4'] as List).isNotEmpty ? _next : null,
+          onBack: _back,
+        );
+      case 4:
+        return _questionStep(
+          'Do you want to learn craving management skills?',
+          Column(
+            children: [
+              RadioListTile<String>(
+                title: const Text('Yes'),
+                value: 'Yes',
+                groupValue: _answers['q5'],
+                onChanged: (val) => setState(() => _answers['q5'] = val),
+              ),
+              RadioListTile<String>(
+                title: const Text('No'),
+                value: 'No',
+                groupValue: _answers['q5'],
+                onChanged: (val) => setState(() => _answers['q5'] = val),
+              ),
+            ],
+          ),
+          onNext: _answers['q5'] != null ? _next : null,
+          onBack: _back,
+        );
+      case 5:
+        return _questionStep(
+          'Do you want to talk to someone?',
+          Column(
+            children: [
+              ListTile(
+                title: const Text('Call TeleManas (Dial 14416)'),
+                leading: const Icon(Icons.phone),
+                onTap: () async {
+                  final uri = Uri.parse('tel:14416');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text('Find Nearby Psychiatrist'),
+                leading: const Icon(Icons.location_on),
+                onTap: () async {
+                  // Open Google Maps with a search for psychiatrists near the user
+                  final url = Uri.parse('https://www.google.com/maps/search/psychiatrist+near+me/');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text('Contact Our Team (dummy)'),
+                leading: const Icon(Icons.email),
+                onTap: () async {
+                  final uri = Uri.parse('mailto:support@dimhans.org?subject=Support%20Request');
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+            ],
+          ),
+          onNext: _next,
+          onBack: _back,
+          isLast: true,
+        );
+      case 6:
+        return _resultScreen();
+      default:
+        return Center(
+          child: Text(
+            'Something went wrong. Please restart the assessment.',
+            style: const TextStyle(color: Colors.red, fontSize: 18),
+            textAlign: TextAlign.center,
+          ),
+        );
+    }
+  }
+
+  Widget _questionStep(
+    String question,
+    Widget child, {
+    VoidCallback? onNext,
+    VoidCallback? onBack,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(question, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+        const SizedBox(height: 24),
+        child,
+        const SizedBox(height: 32),
+        if (!isFirst)
+          OutlinedButton(
+            onPressed: onBack,
+            child: const Text('Back'),
+          ),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: onNext,
+          child: Text(isLast ? 'Submit' : 'Next'),
+        ),
+      ],
+    );
+  }
+
+  Widget _resultScreen() {
+    String message = 'Thank you for completing the assessment!';
+    if (_answers['q1'] == 'Yes') {
+      message += '\nWe recommend exploring craving management skills and talking to a professional.';
+    } else {
+      message += '\nStay informed and support others!';
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Assessment Result', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+        const SizedBox(height: 24),
+        Text(message, style: Theme.of(context).textTheme.bodyLarge, textAlign: TextAlign.center),
+        const SizedBox(height: 32),
+        ElevatedButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Back to Home'),
+        ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => LearnScreen()),
+            );
+          },
+          child: const Text('Learn More / Get Support'),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print('DEBUG: AssessmentScreen build called');
+    return Scaffold(
+      appBar: AppBar(title: const Text('Self-Assessment')),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            width: 500,
+            padding: const EdgeInsets.all(24),
+            child: _buildStep(),
+          ),
+        ),
+      ),
+    );
+  }
+} 
