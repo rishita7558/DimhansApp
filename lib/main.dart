@@ -8,6 +8,7 @@ import 'help_screen.dart';
 import 'craving_skills_screen.dart';
 import 'community_screen.dart';
 import 'assessment_screen.dart';
+import 'about_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -165,6 +166,7 @@ class _MainNavigationState extends State<MainNavigation> {
       HelpScreen(),
       CravingSkillsScreen(),
       CommunityScreen(),
+      AboutScreen(), // Added AboutScreen
     ];
     return Scaffold(
       appBar: AppBar(
@@ -174,7 +176,8 @@ class _MainNavigationState extends State<MainNavigation> {
             'Learn',
             'Help',
             'Craving Management Skills',
-            'Community'
+            'Community',
+            'About', // Added About
           ][_selectedIndex],
         ),
         centerTitle: true,
@@ -192,6 +195,7 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(icon: Icon(Icons.help), label: 'Help'),
           BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Craving Skills'),
           BottomNavigationBarItem(icon: Icon(Icons.groups), label: 'Community'),
+          BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'About'), // Added About
         ],
       ),
     );
