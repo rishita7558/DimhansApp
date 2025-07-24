@@ -25,6 +25,7 @@ class CommunityScreen extends StatelessWidget {
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Community & Resources')),
+      backgroundColor: const Color(0xFFF3EFFF),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

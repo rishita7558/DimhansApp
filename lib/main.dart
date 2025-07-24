@@ -157,19 +157,21 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    int learnTabIndex = 0;
     final screens = <Widget>[
       HomeScreen(
         onStartAssessment: () => _showAssessment(context),
-        onLearn: () => setState(() => _selectedIndex = 1),
+        onLearnPublic: () => setState(() { _selectedIndex = 1; learnTabIndex = 0; }),
+        onLearnStudents: () => setState(() { _selectedIndex = 1; learnTabIndex = 1; }),
       ),
-      LearnScreen(),
+      LearnScreen(initialTabIndex: learnTabIndex),
       HelpScreen(),
       CravingSkillsScreen(),
       CommunityScreen(),
-      AboutScreen(), // Added AboutScreen
+      AboutScreen(),
     ];
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0 ? null : AppBar(
         title: Text(
           [
             'Home',
@@ -177,7 +179,7 @@ class _MainNavigationState extends State<MainNavigation> {
             'Help',
             'Craving Management Skills',
             'Community',
-            'About', // Added About
+            'About',
           ][_selectedIndex],
         ),
         centerTitle: true,
@@ -188,14 +190,14 @@ class _MainNavigationState extends State<MainNavigation> {
         selectedItemColor: Colors.blue[800],
         unselectedItemColor: Colors.grey,
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: (index) => setState(() { _selectedIndex = index; }),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Learn'),
           BottomNavigationBarItem(icon: Icon(Icons.help), label: 'Help'),
           BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Craving Skills'),
           BottomNavigationBarItem(icon: Icon(Icons.groups), label: 'Community'),
-          BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'About'), // Added About
+          BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'About'),
         ],
       ),
     );

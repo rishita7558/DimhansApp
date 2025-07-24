@@ -14,6 +14,7 @@ class AboutScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: theme.primaryColor,
       ),
+      backgroundColor: const Color(0xFFF3EFFF),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(

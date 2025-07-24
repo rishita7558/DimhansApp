@@ -33,6 +33,7 @@ class HelpScreen extends StatelessWidget {
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Help & Support')),
+      backgroundColor: const Color(0xFFF3EFFF),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

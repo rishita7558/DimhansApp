@@ -33,6 +33,7 @@ class CravingSkillsScreen extends StatelessWidget {
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Craving Management Skills')),
+      backgroundColor: const Color(0xFFF3EFFF),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

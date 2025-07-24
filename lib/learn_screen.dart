@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LearnScreen extends StatelessWidget {
-  const LearnScreen({super.key});
+  final int initialTabIndex;
+  const LearnScreen({super.key, this.initialTabIndex = 0});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTabIndex,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF3EFFF),
         appBar: AppBar(
           title: const Text('Learn About Alcohol Addiction'),
           bottom: const TabBar(
@@ -20,11 +23,82 @@ class LearnScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            LearnTabContent(audience: 'Public'),
-            LearnTabContent(audience: 'Students'),
+            LearnTabContentWithLang(audience: 'Public'),
+            LearnTabContentWithLang(audience: 'Students'),
           ],
         ),
       ),
+    );
+  }
+}
+
+class LearnTabContentWithLang extends StatefulWidget {
+  final String audience;
+  const LearnTabContentWithLang({required this.audience, super.key});
+  @override
+  State<LearnTabContentWithLang> createState() => _LearnTabContentWithLangState();
+}
+
+class _LearnTabContentWithLangState extends State<LearnTabContentWithLang> {
+  String lang = 'en';
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text('English', style: TextStyle(fontWeight: lang == 'en' ? FontWeight.bold : FontWeight.normal)),
+              Switch(
+                value: lang == 'kn',
+                onChanged: (v) => setState(() => lang = v ? 'kn' : 'en'),
+              ),
+              Text('Kannada', style: TextStyle(fontWeight: lang == 'kn' ? FontWeight.bold : FontWeight.normal)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: lang == 'en'
+              ? LearnTabContent(audience: widget.audience)
+              : (widget.audience == 'Public'
+                  ? const LearnTabKannadaPublic()
+                  : const LearnTabKannadaStudentsPlaceholder()),
+        ),
+      ],
+    );
+  }
+}
+
+class LearnTabKannadaPublic extends StatelessWidget {
+  const LearnTabKannadaPublic({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Text(
+        """
+“ವೈದ್ಯಸೇವೆಗಳನ್ನು ದೊರಕಲು ನಿಲ್ಲುವ, ಮಾರುಕಟ್ಟೆ ವ್ಯವಸ್ಥೆಗಳ ವ್ಯವಸ್ಥೆಯ ಬಗ್ಗೆ ಜಾಗೃತಿ ಮೂಡಿಸಬೇಕು ನಮ್ಮ ಸಮುದಾಯ”
+
+ವೈದ್ಯಕೀಯ ಪಠ್ಯತೆ ಇಲ್ಲದ ವ್ಯಕ್ತಿಗಳು ಬಹುಪಾಲು ಮಾರುಕಟ್ಟೆ ಮೇಲೆ ಅವಲಂಬಿತರಾಗಿರುತ್ತಾರೆ. ಅವರು ತಮ್ಮ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗಳಿಗೆ ಪರಿಹಾರ ಹುಡುಕಲು ಮಾರುಕಟ್ಟೆ ಮೇಲೆ ಭರವಸೆ ಇಡುತ್ತಾರೆ. ಯಾದೃಚ್ಛಿಕ ಚಿಕಿತ್ಸೆ, ಬದಲಾಗುವ ಮತ್ತು ಮಾರಾಟದ ಆಧಾರದ ಮೇಲೆ ಇರುವ ಔಷಧ ಮಾರುಕಟ್ಟೆ, ಅವ್ಯವಸ್ಥಿತ ಮಾರುಕಟ್ಟೆ, ಔಷಧ ಮಾರಾಟದ ಮೇಲ್ವಿಚಾರಣೆಯ ಕೊರತೆ ಮತ್ತು ಔಷಧದ ಬದಲಾವಣೆಗಳ ಒತ್ತಡಗಳು ಇದ್ದು, ಇವುಗಳೊಂದಿಗೆ ಪೌರಜನರು, ಬಹುಪಾಲು ಪ್ರಾಯೋಗಿಕತೆಯಿಲ್ಲದ ವೈದ್ಯಸೇವೆಗೆ ನಿಲುಕುತ್ತಾರೆ.
+
+ಯಾದೃಚ್ಛಿಕ ಸಮುದಾಯ ಆರೋಗ್ಯಕರತೆಯಕಾರಕದರೆ, ಪ್ರತ್ಯೇಕವಾಗಿ ವೈದ್ಯಕೀಯ ಸೇವೆ ಮಾಡುವ ಮಾರುಕಟ್ಟೆ ವ್ಯವಸ್ಥೆ ಕಾರಣವಾಗುವುದು. “ವೈದ್ಯಸೇವೆಗಳನ್ನು ದೊರಕಲು ನಿಲ್ಲುವ, ಮಾರುಕಟ್ಟೆ ವ್ಯವಸ್ಥೆಗಳ ವ್ಯವಸ್ಥೆಯ ಬಗ್ಗೆ ಜಾಗೃತಿ ಮೂಡಿಸಬೇಕು ನಮ್ಮ ಸಮುದಾಯ” ಯಾದೃಚ್ಛ. ವೈದ್ಯ ಸೇವೆ ಪರದರ್ಶಕತೆಯ ಯಾದೃಚ್ಛತೆಯ ಸಿದ್ಧಾಂತದ ಚರ್ಚೆ ಮಾಡುವ ಚಟುವಟಿಕೆ ಯಾದೃಚ್ಛತೆಯ ನಾದೆ. ವೈದ್ಯಸೇವೆಗೆ ಶಕ್ತಿ ತುಂಬುವುದು, ಅದನ್ನು ಭದ್ರತೆಯಿಂದ ಮಾಪನಗೊಳ್ಳುವುದು. ಮಾರುಕಟ್ಟೆ ವ್ಯವಸ್ಥೆಗೆ ಅನ್ವಯ ಪಡುವ ಪಠ್ಯತೆ, ಮಾಪನವಿಲ್ಲದ, ಆದರೆ ಸಧಾ ಅವಧಿಗಳಲ್ಲಿ, ಕಾಲಾವಧಿಗೆ ಅವಧಿಗಳಲ್ಲಿ, ಯಾದೃಚ್ಛ ವೈದ್ಯರು ಒಳಗೊಳ್ಳುತ್ತಾರೆ. ಯಾದೃಚ್ಛತೆಯ ಪಠ್ಯಗಳಿಗೆ ವೆಚ್ಚಕ್ಕೆ ಓಲೈಸಬಹುದು. ನವೀನ ಪಠ್ಯತೆಗಳೆಲ್ಲ ತಕರಾರದ ಅನಿವಾರ್ಯತೆಯನ್ನು ಪ್ರತಿದಿನವೂ ಪ್ರಾಮುಖ್ಯಪಡಿಸುತ್ತವೆ. ಮಾರುಕಟ್ಟೆ ಪಠ್ಯತೆ ವೈದ್ಯಕೀಯ ಪಠ್ಯತೆಯ ತಾಕೀತಿನಿಮಿತ್ತವಾಗುತ್ತದೆ, ಗೋಡೆಯ ಉಂಟಾಗುವ ವೇದನೆ, ಕುಟುಂಬದ ಸಂಬಂಧಗಳು, ಕ್ಷೇತ್ರದ ಕಾರ್ಯಕ್ಷಮತೆಯನ್ನೂ ಮುಯ್ಯಿಸುವಂತೆ ಜೀವಿತ ಜೀವನದ ಆರೋಗ್ಯಕ್ಕೆ ಕೊಂಡಿ ಪಾಠವಾಗುತ್ತದೆ. ಮಾರುಕಟ್ಟೆ ಪಠ್ಯತೆ ವೈದ್ಯಸೇವೆಯೇ ಅಲ್ಲ, ವೈದ್ಯಸೇವಾ ಸರಬರಾಜಿಗೆ ಮುಂತಾದವೆ. ಇವು ಜಾಗೃತಿ ಕಾರ್ಯಪ್ರವೃತ್ತಿಯಾಗುತ್ತದೆ, ಕುಟುಂಬದ ಶಕ್ತಿ ಮತ್ತು ಬಳಕೆಯ ಉಳಿದರೆ ವೈದ್ಯರನ್ನು ಸಂಪರ್ಕಿಸಿ ನಮ್ಮ ಮಾರುಕಟ್ಟೆ ಪಠ್ಯತೆ ಸೇವೆಗಳಾದನ್ನು ತಳೆಯಬೇಕಾಗುತ್ತದೆ ಮತ್ತು ಶೇಖರಣಾ ಮಾಡಬೇಕಾಗುತ್ತದೆ. ಸಮುದಾಯದಲ್ಲಿ ಚಟುವಟಿಕೆ ಮತ್ತು ಬದಲಾವಣೆ ಬೆಂಬಲವಿರುವ ವೈದ್ಯಸೇವೆಗಳ ಹೊಂದುರಲು ಸಮುದಾಯ ಜಾಗೃತಿ. ವೈದ್ಯಸೇವೆಗಳಿಗೆ ಚಟುವಟಿಕೆಗಳ ಪರಿಣಾಮಕಾರಿತ್ವವು ಅವರಲ್ಲೆ ಸಮುದಾಯ 'ದಲಿ', ಕುಟುಂಬ ಮತ್ತು ಜಾಗೃತಿಕತೆಗಳ ಬೆಂಬಲದಿಂದ ತರುವಾಸು ಅಗತ್ಯತೆಗಳ ಮತ್ತು ವಿಶೇಷಪೂರ್ವ ಡ್ರಗ್ ವಿತರಣೆಯಾದ ವೈದ್ಯರ ಮೇಲೆ ಸ್ಥಿರತೆಯಿಂದ ಜೀವನಶೈಲಿಗೆ ನಿಲುಕುವಂತೆ ಜಾಗೃತಿಪಡಿಸಲಾಗುತ್ತದೆ.
+
+ದುರ್ಬಲಗಣರಿಗೆ, ಬಡವರಿಗೆ ಆರೋಗ್ಯಪಠ್ಯವನ್ನು ದೊರಕಿಸಿಕೊಡುವುದು ನಮ್ಮ ವೈದ್ಯ ಆಧ್ಯಾತ್ಮಿಕತೆಯದು.
+""",
+        style: const TextStyle(fontSize: 18),
+      ),
+    );
+  }
+}
+
+class LearnTabKannadaStudentsPlaceholder extends StatelessWidget {
+  const LearnTabKannadaStudentsPlaceholder({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('Kannada content for students will be added soon.', style: TextStyle(fontSize: 18)),
     );
   }
 }

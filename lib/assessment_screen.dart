@@ -10,6 +10,7 @@ class AssessmentScreen extends StatefulWidget {
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
+  String lang = 'en';
   int _step = 0;
   final _formKey = GlobalKey<FormState>();
   final Map<String, dynamic> _answers = {
@@ -285,14 +286,64 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     print('DEBUG: AssessmentScreen build called');
     return Scaffold(
       appBar: AppBar(title: const Text('Self-Assessment')),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            width: 500,
-            padding: const EdgeInsets.all(24),
-            child: _buildStep(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text('English', style: TextStyle(fontWeight: lang == 'en' ? FontWeight.bold : FontWeight.normal)),
+                Switch(
+                  value: lang == 'kn',
+                  onChanged: (v) => setState(() => lang = v ? 'kn' : 'en'),
+                ),
+                Text('Kannada', style: TextStyle(fontWeight: lang == 'kn' ? FontWeight.bold : FontWeight.normal)),
+              ],
+            ),
           ),
-        ),
+          Expanded(
+            child: lang == 'en'
+                ? Center(
+                    child: SingleChildScrollView(
+                      child: Container(
+                        width: 500,
+                        padding: const EdgeInsets.all(24),
+                        child: _buildStep(),
+                      ),
+                    ),
+                  )
+                : const AssessmentKannadaContent(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AssessmentKannadaContent extends StatelessWidget {
+  const AssessmentKannadaContent({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Text(
+        """
+ನನಗೆ ವೈದ್ಯಕೀಯ ಸಹಾಯ ಬೇಕೇ ಎಂಬುದು ನನಗೆ ಹೇಗೆ ತಿಳಿಯುವುದು?
+
+ಕೆಳಗಿನ ಈ ಪ್ರಶ್ನೆಗಳ ಬಗ್ಗೆ ಯೋಚಿಸುವಷ್ಟು ಸಮರ್ಥ ಸಮಯ ತಗೊಳ್ಳಿ...
+
+೧. ನಮ್ಮ ವೈದ್ಯಕೀಯವನ್ನು ಕಡಿಮೆ ಮಾಡುವದರಿಂದ ನನಗೆ ಲಾಭವಿದೆಯಾ?
+
+೨. ನನ್ನ ವೈದ್ಯಕೀಯ ಕಾರಣದಿಂದಾಗಿ ಇತರರಿಂದ ನನಗೆ ಟೀಕೆಗಳಿಂದ ತಟ್ಟು ಬಂದಿದೆಯಾ?
+
+೩. ನನ್ನ ಹೃದಯ ಬಗ್ಗೆ ತೀವ್ರತ ಭಾವನೆಗಳಿವೆಯೆ?
+
+೪. ಕಣ್ಣ ತಿರುಗುವಂತೆ ಬೆನ್ನುಗೆ ನೋವು ವೈದ್ಯಕೀಯವಾಗಿತ್ತಾ?
+
+ಮೇಲಿನ ಪ್ರಶ್ನೆಗಳಲ್ಲಿ ಒಂದಕ್ಕೆ ನಿಮ್ಮ ಹೌದು ಉತ್ತರಿದರೆ, ನಿಮಗೆ ಕೊಡಬೇಕಾದ ಸಹಾಯ ಇರಬಹುದು, ಮತ್ತು ಮೇಲಿನ ಎರೆಡು ಅಥವಾ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳಿಗೆ ಹೌದು ಎಂದಾದರೆ, ನಿಮಗೆ ಕೊಡಬೇಕಾದ ಸಹಾಯ ಇನ್ನೂ ಸೂಕ್ತತೆ ಹಚ್ಚುವ ವೈದ್ಯಕೀಯ ಸಹಾಯದ ಅಗತ್ಯವಿದೆ.
+""",
+        style: const TextStyle(fontSize: 18),
       ),
     );
   }
