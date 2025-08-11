@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dimhans_app/learn_screen.dart'; // Added import for LearnScreen
 import 'package:url_launcher/url_launcher.dart';
+import 'mood_tracker_screen.dart';
 
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
@@ -264,6 +265,27 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         const SizedBox(height: 24),
         Text(message, style: Theme.of(context).textTheme.bodyLarge, textAlign: TextAlign.center),
         const SizedBox(height: 32),
+        
+        // Show mood tracker button only for alcohol users
+        if (_answers['q1'] == 'Yes') ...[
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => MoodTrackerScreen(assessmentAnswers: _answers),
+                ),
+              );
+            },
+            icon: const Icon(Icons.mood),
+            label: const Text('Track Your Mood'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[600],
+              foregroundColor: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Back to Home'),
@@ -271,8 +293,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         const SizedBox(height: 16),
         TextButton(
           onPressed: () {
+            // Navigate to Learn screen with Awareness tab (index 2)
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => LearnScreen()),
+              MaterialPageRoute(builder: (_) => const LearnScreen(initialTabIndex: 2)),
             );
           },
           child: const Text('Learn More / Get Support'),

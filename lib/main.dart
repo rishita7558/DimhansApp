@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-// TODO: Import Firebase core and initialize Firebase
-// import 'package:firebase_core/firebase_core.dart';
-// import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase_options.dart';
 import 'home_screen.dart';
 import 'learn_screen.dart';
 import 'help_screen.dart';
@@ -9,12 +10,99 @@ import 'craving_skills_screen.dart';
 import 'community_screen.dart';
 import 'assessment_screen.dart';
 import 'about_screen.dart';
+import 'auth_wrapper.dart';
+import 'mood_history_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // TODO: Initialize Firebase here
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const DimhansApp());
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Add error handling for Flutter framework errors
+    FlutterError.onError = (FlutterErrorDetails details) {
+      print('Flutter Error: ${details.exception}');
+      print('Stack trace: ${details.stack}');
+    };
+    
+    print('Starting Firebase initialization...');
+    
+    // Temporarily disabled Firebase for testing
+    // try {
+    //   // Initialize Firebase with configuration from firebase_options.dart
+    //   await Firebase.initializeApp(
+    //     options: DefaultFirebaseOptions.currentPlatform,
+    //   );
+    //   print('Firebase initialized successfully');
+    // } catch (e) {
+    //   print('Firebase initialization failed: $e');
+    //   print('This might be due to missing configuration or network issues');
+    //   
+    //   // Try to initialize without options (will use default config if available)
+    //   try {
+    //     await Firebase.initializeApp();
+    //     print('Firebase initialized with default configuration');
+    //   } catch (e2) {
+    //     print('Firebase initialization with default config also failed: $e2');
+    //     print('App will continue without Firebase - authentication will not work');
+    //   }
+    // }
+    print('Firebase temporarily disabled for testing');
+    
+    print('Starting app...');
+    runApp(const DimhansApp());
+  } catch (e, stackTrace) {
+    print('Critical error in main: $e');
+    print('Stack trace: $stackTrace');
+    
+    // Try to run a minimal app if the main one fails
+    try {
+      runApp(MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.red[100],
+          appBar: AppBar(
+            title: const Text('Critical Error'),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 100,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Critical Error Occurred',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: $e',
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Please check your Firebase configuration and try again.',
+                  style: TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ));
+    } catch (e2) {
+      print('Even the error screen failed: $e2');
+    }
+  }
 }
 
 class DimhansApp extends StatelessWidget {
@@ -22,116 +110,69 @@ class DimhansApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'DIMHANS Alcohol Support',
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primaryColor: Colors.blue[800],
-        scaffoldBackgroundColor: Colors.white,
-        colorScheme: ColorScheme.light(
-          primary: Colors.blue[800]!,
-          secondary: Colors.green[600]!,
-        ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.blue[800],
-          elevation: 1,
-          titleTextStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-          iconTheme: IconThemeData(color: Colors.blue[800]),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[800],
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(56),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+    print('DimhansApp build called');
+    try {
+      return MaterialApp(
+        title: 'DIMHANS Alcohol Support',
+        debugShowCheckedModeBanner: true,
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: Colors.blue[800],
+          scaffoldBackgroundColor: const Color(0xFFF3EFFF),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[800],
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.blue[800],
-            side: BorderSide(color: Colors.blue[800]!),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue[100]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.blue[800]!),
-          ),
-        ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-          bodyMedium: TextStyle(fontSize: 16),
-          titleLarge: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          titleMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        dividerTheme: const DividerThemeData(
-          color: Color(0xFFE0E0E0),
-          thickness: 1,
-        ),
-        useMaterial3: true,
-      ),
-      home: const SplashScreen(),
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        home: const AuthWrapper(),
       );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // TODO: Replace with your app logo
-            Icon(Icons.local_hospital, size: 100, color: Colors.blue[800]),
-            const SizedBox(height: 24),
-            const Text(
-              'Your Support Against Alcohol Addiction',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+    } catch (e, stackTrace) {
+      print('Error in DimhansApp build: $e');
+      print('Stack trace: $stackTrace');
+      return MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.red[200],
+          appBar: AppBar(
+            title: const Text('App Build Error'),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 100,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'App Build Error',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: $e',
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
 
@@ -155,6 +196,38 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
+  Future<void> _logout() async {
+    try {
+      // Try Firebase logout if available
+      try {
+        await FirebaseAuth.instance.signOut();
+        print('Firebase logout successful');
+      } catch (e) {
+        print('Firebase logout failed (not available): $e');
+      }
+      
+      // Clear stored preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
+        );
+      }
+    } catch (e) {
+      // Handle logout error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error logging out'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     int learnTabIndex = 0;
@@ -165,8 +238,9 @@ class _MainNavigationState extends State<MainNavigation> {
         onLearnStudents: () => setState(() { _selectedIndex = 1; learnTabIndex = 1; }),
       ),
       LearnScreen(initialTabIndex: learnTabIndex),
-      HelpScreen(),
-      CravingSkillsScreen(),
+      const HelpScreen(),
+      const CravingSkillsScreen(),
+      const MoodHistoryScreen(),
       CommunityScreen(),
       AboutScreen(),
     ];
@@ -178,11 +252,21 @@ class _MainNavigationState extends State<MainNavigation> {
             'Learn',
             'Help',
             'Craving Management Skills',
+            'Mood History',
             'Community',
             'About',
           ][_selectedIndex],
         ),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.blue[800],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.blue[800]),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
       ),
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -196,6 +280,7 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Learn'),
           BottomNavigationBarItem(icon: Icon(Icons.help), label: 'Help'),
           BottomNavigationBarItem(icon: Icon(Icons.self_improvement), label: 'Craving Skills'),
+          BottomNavigationBarItem(icon: Icon(Icons.mood), label: 'Mood History'),
           BottomNavigationBarItem(icon: Icon(Icons.groups), label: 'Community'),
           BottomNavigationBarItem(icon: Icon(Icons.info_outline), label: 'About'),
         ],
