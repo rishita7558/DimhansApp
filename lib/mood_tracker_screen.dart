@@ -16,8 +16,8 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   bool _isEnglish = true;
   int _currentMood = 3; // Default to neutral (scale 1-5)
   String _moodDescription = '';
-  List<String> _selectedTriggers = [];
-  List<String> _selectedCopingStrategies = [];
+  final List<String> _selectedTriggers = [];
+  final List<String> _selectedCopingStrategies = [];
   bool _isLoading = false;
 
   final List<String> _moodLabels = ['Very Low', 'Low', 'Neutral', 'Good', 'Excellent'];

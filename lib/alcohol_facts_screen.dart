@@ -112,7 +112,7 @@ class AlcoholFactsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )).toList(),
+                  )),
                 ],
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'welcome_screen.dart';
+import 'auth_service.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -41,112 +40,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
       print('Starting registration process...');
       print('Email: ${_emailController.text.trim()}');
       print('Name: ${_nameController.text.trim()}');
-      
-      // Check if Firebase is available
-      try {
-        if (FirebaseAuth.instance == null) {
-          throw Exception('Firebase is not initialized');
-        }
 
-        final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+      // Use the new AuthService for secure registration
+      final result = await AuthService.signUpWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        displayName: _nameController.text.trim(),
+      );
+
+      print('User created successfully: ${result.user?.uid}');
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+          ),
         );
-      } catch (e) {
-        // Firebase not available, simulate registration for demo
-        print('Firebase not available, simulating registration for demo');
-        
-        // Simulate successful registration
-        if (mounted) {
-          // Save demo login state
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            await prefs.setString('userEmail', _emailController.text.trim());
-            await prefs.setString('userName', _nameController.text.trim());
-            await prefs.setInt('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
-            print('Demo registration state saved to SharedPreferences');
-          } catch (e) {
-            print('Warning: Could not save to SharedPreferences: $e');
-          }
 
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => WelcomeScreen(
-              userName: _nameController.text.trim(),
-            )),
-          );
-        }
-        return;
+        // Navigate to email verification screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EmailVerificationScreen(
+              email: _emailController.text.trim(),
+              displayName: _nameController.text.trim(),
+            ),
+          ),
+        );
       }
-
-      print('User created successfully: ${userCredential.user?.uid}');
-
-      if (userCredential.user != null) {
-        // Update user profile with name
-        try {
-          await userCredential.user!.updateDisplayName(_nameController.text.trim());
-          print('Display name updated successfully');
-        } catch (e) {
-          print('Warning: Could not update display name: $e');
-          // Continue anyway as this is not critical
-        }
-        
-        // Save login state
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-          await prefs.setString('userEmail', userCredential.user!.email ?? '');
-          await prefs.setString('userName', _nameController.text.trim());
-          await prefs.setInt('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
-          print('Login state saved to SharedPreferences');
-        } catch (e) {
-          print('Warning: Could not save to SharedPreferences: $e');
-          // Continue anyway as this is not critical
-        }
-
-        if (mounted) {
-          print('Navigating to WelcomeScreen...');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => WelcomeScreen(
-              userName: _nameController.text.trim(),
-            )),
-          );
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}');
-      String errorMessage = _isEnglish ? 'An error occurred' : 'ದೋಷ ಸಂಭವಿಸಿದೆ';
-      
-      if (e.code == 'weak-password') {
-        errorMessage = _isEnglish 
-          ? 'The password provided is too weak. Please use at least 6 characters.'
-          : 'ನೀಡಲಾದ ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ದುರ್ಬಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳನ್ನು ಬಳಸಿ.';
-      } else if (e.code == 'email-already-in-use') {
-        errorMessage = _isEnglish 
-          ? 'An account already exists with this email. Please try logging in instead.'
-          : 'ಈ ಇಮೇಲ್‌ನೊಂದಿಗೆ ಈಗಾಗಲೇ ಖಾತೆ ಅಸ್ತಿತ್ವದಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ಬದಲಿಗೆ ಲಾಗಿನ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = _isEnglish 
-          ? 'Please enter a valid email address.'
-          : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ.';
-      } else if (e.code == 'operation-not-allowed') {
-        errorMessage = _isEnglish 
-          ? 'Email/password accounts are not enabled. Please contact support.'
-          : 'ಇಮೇಲ್/ಪಾಸ್‌ವರ್ಡ್ ಖಾತೆಗಳನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಂಬಲವನ್ನು ಸಂಪರ್ಕಿಸಿ.';
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = _isEnglish 
-          ? 'Network error. Please check your internet connection and try again.'
-          : 'ನೆಟ್‌ವರ್ಕ್ ದೋಷ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
-      } else {
-        errorMessage = _isEnglish 
-          ? 'Registration failed: ${e.message ?? 'Unknown error'}'
-          : 'ನೋಂದಣಿ ವಿಫಲವಾಗಿದೆ: ${e.message ?? 'ಅಜ್ಞಾತ ದೋಷ'}';
-      }
+    } on AuthException catch (e) {
+      print('AuthException: ${e.code} - ${e.message}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text(e.message),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 5),
@@ -160,10 +90,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       print('Unexpected error during registration: $e');
-      String errorMessage = _isEnglish 
-        ? 'An unexpected error occurred: $e'
-        : 'ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ: $e';
-      
+      String errorMessage = _isEnglish
+          ? 'An unexpected error occurred: $e'
+          : 'ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ: $e';
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -216,11 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.language,
-            size: 20,
-            color: theme.primaryColor,
-          ),
+          Icon(Icons.language, size: 20, color: theme.primaryColor),
           const SizedBox(width: 12),
           Text(
             'English',
@@ -270,31 +196,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // Enhanced content getters
-  String get _pageTitle => _isEnglish 
-    ? 'Create Account'
-    : 'ಖಾತೆ ರಚಿಸಿ';
+  String get _pageTitle => _isEnglish ? 'Create Account' : 'ಖಾತೆ ರಚಿಸಿ';
 
   String get _subtitle => _isEnglish
-    ? 'Start your recovery journey today'
-    : 'ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣವನ್ನು ಇಂದು ಪ್ರಾರಂಭಿಸಿ';
+      ? 'Start your recovery journey today'
+      : 'ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣವನ್ನು ಇಂದು ಪ್ರಾರಂಭಿಸಿ';
 
   String get _nameLabel => _isEnglish ? 'Full Name' : 'ಪೂರ್ಣ ಹೆಸರು';
   String get _emailLabel => _isEnglish ? 'Email' : 'ಇಮೇಲ್';
   String get _passwordLabel => _isEnglish ? 'Password' : 'ಪಾಸ್‌ವರ್ಡ್';
-  String get _confirmPasswordLabel => _isEnglish ? 'Confirm Password' : 'ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
+  String get _confirmPasswordLabel =>
+      _isEnglish ? 'Confirm Password' : 'ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
   String get _createAccountText => _isEnglish ? 'Create Account' : 'ಖಾತೆ ರಚಿಸಿ';
-  String get _alreadyHaveAccountText => _isEnglish ? 'Already have an account?' : 'ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?';
+  String get _alreadyHaveAccountText =>
+      _isEnglish ? 'Already have an account?' : 'ಈಗಾಗಲೇ ಖಾತೆ ಇದೆಯೇ?';
   String get _signInText => _isEnglish ? 'Sign In' : 'ಸೈನ್ ಇನ್';
-  String get _nameHint => _isEnglish ? 'Enter your full name' : 'ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ';
-  String get _emailHint => _isEnglish ? 'Enter your email' : 'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
-  String get _passwordHint => _isEnglish ? 'Enter your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
-  String get _confirmPasswordHint => _isEnglish ? 'Confirm your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
+  String get _nameHint =>
+      _isEnglish ? 'Enter your full name' : 'ನಿಮ್ಮ ಪೂರ್ಣ ಹೆಸರನ್ನು ನಮೂದಿಸಿ';
+  String get _emailHint =>
+      _isEnglish ? 'Enter your email' : 'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+  String get _passwordHint =>
+      _isEnglish ? 'Enter your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
+  String get _confirmPasswordHint =>
+      _isEnglish ? 'Confirm your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
 
   @override
   Widget build(BuildContext context) {
     print('RegisterScreen build called');
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3EFFF),
       body: SafeArea(
@@ -306,10 +236,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Language Toggle
                 _buildLanguageToggle(theme),
-                
+
                 // Enhanced App Logo/Icon
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -331,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Enhanced Title
                 Text(
                   _pageTitle,
@@ -343,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Enhanced Subtitle
                 Text(
                   _subtitle,
@@ -354,7 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Enhanced Name Field
                 _buildEnhancedTextField(
                   controller: _nameController,
@@ -363,16 +293,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icons.person,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return _isEnglish ? 'Please enter your name' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ';
+                      return _isEnglish
+                          ? 'Please enter your name'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ';
                     }
                     if (value.trim().length < 2) {
-                      return _isEnglish ? 'Name must be at least 2 characters' : 'ಹೆಸರು ಕನಿಷ್ಠ 2 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು';
+                      return _isEnglish
+                          ? 'Name must be at least 2 characters'
+                          : 'ಹೆಸರು ಕನಿಷ್ಠ 2 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Email Field
                 _buildEnhancedTextField(
                   controller: _emailController,
@@ -382,16 +316,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return _isEnglish ? 'Please enter your email' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+                      return _isEnglish
+                          ? 'Please enter your email'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
-                      return _isEnglish ? 'Please enter a valid email' : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value.trim())) {
+                      return _isEnglish
+                          ? 'Please enter a valid email'
+                          : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ನಮೂದಿಸಿ';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Password Field
                 _buildEnhancedTextField(
                   controller: _passwordController,
@@ -401,7 +341,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: theme.primaryColor,
                     ),
                     onPressed: () {
@@ -412,16 +354,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return _isEnglish ? 'Please enter your password' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
+                      return _isEnglish
+                          ? 'Please enter your password'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
                     }
-                    if (value.length < 6) {
-                      return _isEnglish ? 'Password must be at least 6 characters' : 'ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು';
+                    if (!AuthService.isPasswordStrong(value)) {
+                      return _isEnglish
+                          ? 'Password must be at least 8 characters with uppercase, lowercase, number, and special character'
+                          : 'ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 8 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು ಮತ್ತು ದೊಡ್ಡಕ್ಷರ, ಸಣ್ಣಕ್ಷರ, ಸಂಖ್ಯೆ ಮತ್ತು ವಿಶೇಷ ಅಕ್ಷರಗಳನ್ನು ಒಳಗೊಂಡಿರಬೇಕು';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Confirm Password Field
                 _buildEnhancedTextField(
                   controller: _confirmPasswordController,
@@ -431,7 +377,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscureConfirmPassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      _obscureConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: theme.primaryColor,
                     ),
                     onPressed: () {
@@ -442,16 +390,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return _isEnglish ? 'Please confirm your password' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
+                      return _isEnglish
+                          ? 'Please confirm your password'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ದೃಢೀಕರಿಸಿ';
                     }
                     if (value != _passwordController.text) {
-                      return _isEnglish ? 'Passwords do not match' : 'ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತವೆ';
+                      return _isEnglish
+                          ? 'Passwords do not match'
+                          : 'ಪಾಸ್‌ವರ್ಡ್‌ಗಳು ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತವೆ';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Enhanced Create Account Button
                 Container(
                   height: 56,
@@ -481,31 +433,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     child: _isLoading
-                      ? SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            _createAccountText,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                        )
-                      : Text(
-                          _createAccountText,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Enhanced Sign In Link
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(12),
@@ -518,10 +473,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Text(
                         _alreadyHaveAccountText,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
                       ),
                       TextButton(
                         onPressed: () {
@@ -603,10 +555,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
         ),
         validator: validator,
       ),
     );
   }
-} 
+}

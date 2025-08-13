@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_service.dart';
 import 'welcome_screen.dart';
 import 'register_screen.dart';
 
@@ -37,106 +36,38 @@ class _LoginScreenState extends State<LoginScreen> {
       print('Starting login process...');
       print('Email: ${_emailController.text.trim()}');
       
-      // Check if Firebase is available
-      try {
-        if (FirebaseAuth.instance == null) {
-          throw Exception('Firebase is not initialized');
-        }
+      // Use the new AuthService for secure authentication
+      final result = await AuthService.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      
+      print('User logged in successfully: ${result.user?.uid}');
 
-        final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+      if (result.user != null && result.isEmailVerified) {
+        // Save user data to local storage
+        await AuthService.saveUserData(
+          email: result.user!.email ?? '',
+          displayName: result.user!.displayName ?? 'User',
+          isLoggedIn: true,
         );
-      } catch (e) {
-        // Firebase not available, simulate login for demo
-        print('Firebase not available, simulating login for demo');
-        
-        // Simulate successful login
-        if (mounted) {
-          // Save demo login state
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setBool('isLoggedIn', true);
-            await prefs.setString('userEmail', _emailController.text.trim());
-            await prefs.setString('userName', 'Demo User');
-            await prefs.setInt('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
-            print('Demo login state saved to SharedPreferences');
-          } catch (e) {
-            print('Warning: Could not save to SharedPreferences: $e');
-          }
-
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const WelcomeScreen(
-              userName: 'Demo User',
-            )),
-          );
-        }
-        return;
-      }
-
-      print('User logged in successfully: ${userCredential.user?.uid}');
-
-      if (userCredential.user != null) {
-        // Save login state
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-          await prefs.setString('userEmail', userCredential.user!.email ?? '');
-          await prefs.setString('userName', userCredential.user!.displayName ?? 'User');
-          await prefs.setInt('lastLoginTime', DateTime.now().millisecondsSinceEpoch);
-          print('Login state saved to SharedPreferences');
-        } catch (e) {
-          print('Warning: Could not save to SharedPreferences: $e');
-          // Continue anyway as this is not critical
-        }
 
         if (mounted) {
           print('Navigating to WelcomeScreen...');
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => WelcomeScreen(
-              userName: userCredential.user!.displayName ?? 'User',
+              userName: result.user!.displayName ?? 'User',
             )),
           );
         }
       }
-    } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}');
-      String errorMessage = _isEnglish ? 'An error occurred' : 'ದೋಷ ಸಂಭವಿಸಿದೆ';
+    } on AuthException catch (e) {
+      print('AuthException: ${e.code} - ${e.message}');
       
-      if (e.code == 'user-not-found') {
-        errorMessage = _isEnglish 
-          ? 'No user found with this email. Please check your email or create a new account.'
-          : 'ಈ ಇಮೇಲ್‌ನೊಂದಿಗೆ ಯಾವುದೇ ಬಳಕೆದಾರರನ್ನು ಕಂಡುಹಿಡಿಯಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಿ ಅಥವಾ ಹೊಸ ಖಾತೆ ರಚಿಸಿ.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = _isEnglish 
-          ? 'Incorrect password. Please try again.'
-          : 'ತಪ್ಪಾದ ಪಾಸ್‌ವರ್ಡ್. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
-      } else if (e.code == 'invalid-email') {
-        errorMessage = _isEnglish 
-          ? 'Please enter a valid email address.'
-          : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ವಿಳಾಸವನ್ನು ನಮೂದಿಸಿ.';
-      } else if (e.code == 'user-disabled') {
-        errorMessage = _isEnglish 
-          ? 'This account has been disabled. Please contact support.'
-          : 'ಈ ಖಾತೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ಬೆಂಬಲವನ್ನು ಸಂಪರ್ಕಿಸಿ.';
-      } else if (e.code == 'too-many-requests') {
-        errorMessage = _isEnglish 
-          ? 'Too many failed attempts. Please try again later.'
-          : 'ತುಂಬಾ ವಿಫಲ ಪ್ರಯತ್ನಗಳು. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = _isEnglish 
-          ? 'Network error. Please check your internet connection and try again.'
-          : 'ನೆಟ್‌ವರ್ಕ್ ದೋಷ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವನ್ನು ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.';
-      } else {
-        errorMessage = _isEnglish 
-          ? 'Login failed: ${e.message ?? 'Unknown error'}'
-          : 'ಲಾಗಿನ್ ವಿಫಲವಾಗಿದೆ: ${e.message ?? 'ಅಜ್ಞಾತ ದೋಷ'}';
-      }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text(e.message),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 5),

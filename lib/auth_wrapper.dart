@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'auth_service.dart';
 import 'login_screen.dart';
 import 'welcome_screen.dart';
 
@@ -11,7 +10,8 @@ class AuthWrapper extends StatefulWidget {
   State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin {
+class _AuthWrapperState extends State<AuthWrapper>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _scaleController;
   late Animation<double> _fadeAnimation;
@@ -25,33 +25,25 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
   void initState() {
     super.initState();
     print('AuthWrapper initState called');
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.easeOutCubic,
-    ));
-    
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOutCubic),
+    );
+
     _checkAuthStatus();
   }
 
@@ -64,24 +56,32 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
 
   Future<void> _checkAuthStatus() async {
     print('AuthWrapper: Checking authentication status...');
-    
+
     try {
       // Start animations
       _fadeController.forward();
       await Future.delayed(const Duration(milliseconds: 300));
       _scaleController.forward();
-      
-      // Check Firebase Auth first (if available)
+
+      // Check Firebase Auth first
       try {
-        final firebaseUser = FirebaseAuth.instance.currentUser;
+        final firebaseUser = AuthService.currentUser;
         print('AuthWrapper: Firebase user: ${firebaseUser?.uid ?? 'null'}');
-        
-        if (firebaseUser != null) {
-          print('AuthWrapper: User is logged in via Firebase');
+
+        if (firebaseUser != null && AuthService.isEmailVerified) {
+          print('AuthWrapper: User is logged in and verified via Firebase');
           setState(() {
             _isLoggedIn = true;
             _userName = firebaseUser.displayName ?? 'User';
             _userEmail = firebaseUser.email ?? '';
+            _isLoading = false;
+          });
+          return;
+        } else if (firebaseUser != null && !AuthService.isEmailVerified) {
+          print('AuthWrapper: User exists but email not verified');
+          // User exists but email not verified, redirect to login
+          setState(() {
+            _isLoggedIn = false;
             _isLoading = false;
           });
           return;
@@ -90,21 +90,24 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
         print('AuthWrapper: Firebase not available: $e');
         // Continue with SharedPreferences check
       }
-      
+
       // Check SharedPreferences as fallback
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-      final userName = prefs.getString('userName') ?? '';
-      final userEmail = prefs.getString('userEmail') ?? '';
-      final lastLoginTime = prefs.getInt('lastLoginTime') ?? 0;
-      
-      print('AuthWrapper: SharedPreferences - isLoggedIn: $isLoggedIn, userName: $userName');
-      
+      final userData = await AuthService.getUserData();
+      final isLoggedIn = userData['isLoggedIn'] ?? false;
+      final userName = userData['userName'] ?? '';
+      final userEmail = userData['userEmail'] ?? '';
+      final lastLoginTime = userData['lastLoginTime'] ?? 0;
+
+      print(
+        'AuthWrapper: SharedPreferences - isLoggedIn: $isLoggedIn, userName: $userName',
+      );
+
       if (isLoggedIn && userName.isNotEmpty) {
         // Check if session is still valid (7 days)
         final currentTime = DateTime.now().millisecondsSinceEpoch;
-        final sessionValid = (currentTime - lastLoginTime) < (7 * 24 * 60 * 60 * 1000);
-        
+        final sessionValid =
+            (currentTime - lastLoginTime) < (7 * 24 * 60 * 60 * 1000);
+
         if (sessionValid) {
           print('AuthWrapper: Session is valid, user is logged in');
           setState(() {
@@ -116,16 +119,15 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
           return;
         } else {
           print('AuthWrapper: Session expired, clearing preferences');
-          await prefs.clear();
+          await AuthService.clearUserData();
         }
       }
-      
+
       print('AuthWrapper: User is not logged in');
       setState(() {
         _isLoggedIn = false;
         _isLoading = false;
       });
-      
     } catch (e) {
       print('AuthWrapper: Error checking auth status: $e');
       setState(() {
@@ -137,16 +139,18 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    print('AuthWrapper build called - isLoading: $_isLoading, isLoggedIn: $_isLoggedIn');
-    
+    print(
+      'AuthWrapper build called - isLoading: $_isLoading, isLoggedIn: $_isLoggedIn',
+    );
+
     if (_isLoading) {
       return _buildLoadingScreen();
     }
-    
+
     if (_isLoggedIn) {
       return WelcomeScreen(userName: _userName);
     }
-    
+
     return const LoginScreen();
   }
 
@@ -189,7 +193,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
                   ),
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Enhanced App Title
                 Text(
                   'DIMHANS',
@@ -201,7 +205,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Enhanced Subtitle
                 Text(
                   'Alcohol Support & Recovery',
@@ -212,7 +216,7 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
                   ),
                 ),
                 const SizedBox(height: 60),
-                
+
                 // Enhanced Loading Indicator
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -258,4 +262,4 @@ class _AuthWrapperState extends State<AuthWrapper> with TickerProviderStateMixin
       ),
     );
   }
-} 
+}

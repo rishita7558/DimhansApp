@@ -2,12 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'mood_tracker_screen.dart';
+import 'quick_mood_check_screen.dart';
+import 'mood_history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final VoidCallback onStartAssessment;
   final VoidCallback onLearnPublic;
   final VoidCallback onLearnStudents;
-  const HomeScreen({super.key, required this.onStartAssessment, required this.onLearnPublic, required this.onLearnStudents});
+  const HomeScreen({
+    super.key,
+    required this.onStartAssessment,
+    required this.onLearnPublic,
+    required this.onLearnStudents,
+  });
 
   void _showPledgeDialog(BuildContext context) {
     showDialog(
@@ -24,7 +31,7 @@ class HomeScreen extends StatelessWidget {
       // Clear stored preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       // Navigate back to auth wrapper
       if (context.mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
@@ -43,19 +50,15 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showQuickMoodEntry(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => MoodTrackerScreen(
-          assessmentAnswers: {
-            'q1': 'Yes', // Assume user has completed assessment
-            'q2': 'User',
-            'q3': '25',
-            'q4': ['Quick Entry'],
-            'q5': 'Yes',
-          },
-        ),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const QuickMoodCheckScreen()));
+  }
+
+  void _showMoodHistory(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const MoodHistoryScreen()));
   }
 
   @override
@@ -91,12 +94,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 32),
-                Center(
-                  child: Image.asset(
-                    'assets/9636542.webp',
-                    height: 220,
-                  ),
-                ),
+                Center(child: Image.asset('assets/9636542.webp', height: 220)),
                 const SizedBox(height: 32),
                 const Text(
                   'Your Health,\nOur Priority',
@@ -135,7 +133,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: onStartAssessment,
-                    child: const Text('Start Self-Assessment (Alcohol users only)'),
+                    child: const Text(
+                      'Start Self-Assessment (Alcohol users only)',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -160,7 +160,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Quick Mood Entry Button
                 SizedBox(
                   width: double.infinity,
@@ -183,13 +183,42 @@ class HomeScreen extends StatelessWidget {
                     label: const Text('Quick Mood Check'),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // View Mood History Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFFF9800),
+                      side: const BorderSide(
+                        color: Color(0xFFFF9800),
+                        width: 2,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      textStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onPressed: () => _showMoodHistory(context),
+                    icon: const Icon(Icons.history),
+                    label: const Text('View Mood History'),
+                  ),
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF6C63FF),
-                      side: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+                      side: const BorderSide(
+                        color: Color(0xFF6C63FF),
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -200,7 +229,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: onLearnPublic,
-                    child: const Text('Learn about Alcohol Addiction (for Public)'),
+                    child: const Text(
+                      'Learn about Alcohol Addiction (for Public)',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -209,7 +240,10 @@ class HomeScreen extends StatelessWidget {
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF6C63FF),
-                      side: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+                      side: const BorderSide(
+                        color: Color(0xFF6C63FF),
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -220,7 +254,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: onLearnStudents,
-                    child: const Text('Learn about Alcohol Addiction (for Students)'),
+                    child: const Text(
+                      'Learn about Alcohol Addiction (for Students)',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -282,9 +318,7 @@ Jai Hind!'''
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -344,7 +378,9 @@ Jai Hind!'''
                           });
                         },
                         activeColor: const Color(0xFF6C63FF),
-                        activeTrackColor: const Color(0xFF6C63FF).withOpacity(0.3),
+                        activeTrackColor: const Color(
+                          0xFF6C63FF,
+                        ).withOpacity(0.3),
                         inactiveThumbColor: Colors.grey,
                         inactiveTrackColor: Colors.grey.withOpacity(0.3),
                       ),
@@ -356,13 +392,15 @@ Jai Hind!'''
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: !_isEnglish ? const Color(0xFF6C63FF) : Colors.grey,
+                      color: !_isEnglish
+                          ? const Color(0xFF6C63FF)
+                          : Colors.grey,
                     ),
                   ),
                 ],
               ),
             ),
-            
+
             // Title
             Text(
               _isEnglish ? 'Pledge' : 'ಪ್ರತಿಜ್ಞೆ',
@@ -373,7 +411,7 @@ Jai Hind!'''
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Pledge Count
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -387,16 +425,12 @@ Jai Hind!'''
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.people,
-                    size: 16,
-                    color: Color(0xFF4CAF50),
-                  ),
+                  const Icon(Icons.people, size: 16, color: Color(0xFF4CAF50)),
                   const SizedBox(width: 8),
                   Text(
-                    _isEnglish 
-                      ? '$_pledgeCount people have taken the pledge'
-                      : '$_pledgeCount ಜನರು ಪ್ರತಿಜ್ಞೆ ಮಾಡಿದ್ದಾರೆ',
+                    _isEnglish
+                        ? '$_pledgeCount people have taken the pledge'
+                        : '$_pledgeCount ಜನರು ಪ್ರತಿಜ್ಞೆ ಮಾಡಿದ್ದಾರೆ',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -407,7 +441,7 @@ Jai Hind!'''
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Pledge Text
             Container(
               padding: const EdgeInsets.all(16),
@@ -429,7 +463,7 @@ Jai Hind!'''
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Buttons
             Row(
               children: [
@@ -437,7 +471,10 @@ Jai Hind!'''
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF6C63FF),
-                      side: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+                      side: const BorderSide(
+                        color: Color(0xFF6C63FF),
+                        width: 2,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -462,14 +499,14 @@ Jai Hind!'''
                     onPressed: () async {
                       // Increment pledge count
                       await _incrementPledgeCount();
-                      
+
                       // Show success message
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            _isEnglish 
-                              ? 'Thank you for taking the pledge! Stay strong and drug-free!' 
-                              : 'ಪ್ರತಿಜ್ಞೆ ಮಾಡಿದಕ್ಕಾಗಿ ಧನ್ಯವಾದಗಳು! ಬಲಶಾಲಿಯಾಗಿ ಮತ್ತು ಮಾದಕ ವಸ್ತುರಹಿತವಾಗಿ ಇರಿ!',
+                            _isEnglish
+                                ? 'Thank you for taking the pledge! Stay strong and drug-free!'
+                                : 'ಪ್ರತಿಜ್ಞೆ ಮಾಡಿದಕ್ಕಾಗಿ ಧನ್ಯವಾದಗಳು! ಬಲಶಾಲಿಯಾಗಿ ಮತ್ತು ಮಾದಕ ವಸ್ತುರಹಿತವಾಗಿ ಇರಿ!',
                           ),
                           backgroundColor: const Color(0xFF4CAF50),
                           behavior: SnackBarBehavior.floating,
@@ -480,7 +517,9 @@ Jai Hind!'''
                       );
                       Navigator.of(context).pop();
                     },
-                    child: Text(_isEnglish ? 'I Pledge' : 'ನಾನು ಪ್ರತಿಜ್ಞೆ ಮಾಡುತ್ತೇನೆ'),
+                    child: Text(
+                      _isEnglish ? 'I Pledge' : 'ನಾನು ಪ್ರತಿಜ್ಞೆ ಮಾಡುತ್ತೇನೆ',
+                    ),
                   ),
                 ),
               ],
@@ -490,4 +529,4 @@ Jai Hind!'''
       ),
     );
   }
-} 
+}

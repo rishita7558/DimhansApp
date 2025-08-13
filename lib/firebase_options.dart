@@ -6,6 +6,18 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
+/// IMPORTANT: You need to replace these placeholder values with your actual Firebase project configuration.
+/// 
+/// To set up Firebase properly:
+/// 1. Go to https://console.firebase.google.com/
+/// 2. Create a new project or select existing one
+/// 3. Enable Authentication in the Firebase console
+/// 4. Enable Email/Password authentication
+/// 5. Enable Email verification
+/// 6. Add a web app to your project
+/// 7. Copy the configuration values from the Firebase console
+/// 8. Replace the placeholder values below
+/// 
 /// Example:
 /// ```dart
 /// import 'firebase_options.dart';
@@ -40,57 +52,50 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // NOTE: These are placeholder values for testing. 
-  // You need to replace them with your actual Firebase project configuration.
-  // To get these values:
-  // 1. Go to https://console.firebase.google.com/
-  // 2. Create a new project or select existing one
-  // 3. Add a web app to your project
-  // 4. Copy the configuration values from the Firebase console
-  
+  // Your actual Firebase configuration values
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'demo-api-key-for-testing',
-    appId: 'demo-app-id-for-testing',
-    messagingSenderId: '123456789',
-    projectId: 'demo-project-id',
-    authDomain: 'demo-project.firebaseapp.com',
-    storageBucket: 'demo-project.appspot.com',
-    measurementId: 'demo-measurement-id',
+    apiKey: 'AIzaSyA7znqd02xZn-LHNPtP90pHkHKiE9T9PxY',
+    appId: '1:625868860063:web:20ce71c59bc91292fdd0aa',
+    messagingSenderId: '625868860063',
+    projectId: 'dimhans-app',
+    authDomain: 'dimhans-app.firebaseapp.com',
+    storageBucket: 'dimhans-app.appspot.com',
+    measurementId: 'G-XFJ153QHN2',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'demo-api-key-for-testing',
-    appId: 'demo-app-id-for-testing',
-    messagingSenderId: '123456789',
-    projectId: 'demo-project-id',
-    storageBucket: 'demo-project.appspot.com',
+    apiKey: 'AIzaSyA7znqd02xZn-LHNPtP90pHkHKiE9T9PxY',
+    appId: '1:625868860063:web:20ce71c59bc91292fdd0aa',
+    messagingSenderId: '625868860063',
+    projectId: 'dimhans-app',
+    storageBucket: 'dimhans-app.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'demo-api-key-for-testing',
-    appId: 'demo-app-id-for-testing',
-    messagingSenderId: '123456789',
-    projectId: 'demo-project-id',
-    storageBucket: 'demo-project.appspot.com',
-    iosClientId: 'demo-ios-client-id',
+    apiKey: 'AIzaSyA7znqd02xZn-LHNPtP90pHkHKiE9T9PxY',
+    appId: '1:625868860063:web:20ce71c59bc91292fdd0aa',
+    messagingSenderId: '625868860063',
+    projectId: 'dimhans-app',
+    storageBucket: 'dimhans-app.appspot.com',
+    iosClientId: 'YOUR-IOS-CLIENT-ID-HERE',
     iosBundleId: 'com.example.dimhansApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'demo-api-key-for-testing',
-    appId: 'demo-app-id-for-testing',
-    messagingSenderId: '123456789',
-    projectId: 'demo-project-id',
-    storageBucket: 'demo-project.appspot.com',
-    iosClientId: 'demo-ios-client-id',
+    apiKey: 'AIzaSyA7znqd02xZn-LHNPtP90pHkHKiE9T9PxY',
+    appId: '1:625868860063:web:20ce71c59bc91292fdd0aa',
+    messagingSenderId: '625868860063',
+    projectId: 'dimhans-app',
+    storageBucket: 'dimhans-app.appspot.com',
+    iosClientId: 'YOUR-IOS-CLIENT-ID-HERE',
     iosBundleId: 'com.example.dimhansApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'demo-api-key-for-testing',
-    appId: 'demo-app-id-for-testing',
-    messagingSenderId: '123456789',
-    projectId: 'demo-project-id',
-    storageBucket: 'demo-project.appspot.com',
+    apiKey: 'AIzaSyA7znqd02xZn-LHNPtP90pHkHKiE9T9PxY',
+    appId: '1:625868860063:web:20ce71c59bc91292fdd0aa',
+    messagingSenderId: '625868860063',
+    projectId: 'dimhans-app',
+    storageBucket: 'dimhans-app.appspot.com',
   );
 } 
