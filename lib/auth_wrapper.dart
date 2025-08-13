@@ -63,7 +63,19 @@ class _AuthWrapperState extends State<AuthWrapper>
       await Future.delayed(const Duration(milliseconds: 300));
       _scaleController.forward();
 
-      // Check Firebase Auth first
+      // Security check: Ensure Firebase is available before proceeding
+      if (!AuthService.isFirebaseAvailable) {
+        print(
+          'AuthWrapper: Firebase is not available - authentication cannot work',
+        );
+        setState(() {
+          _isLoggedIn = false;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Check Firebase Auth - this is the ONLY authentication method
       try {
         final firebaseUser = AuthService.currentUser;
         print('AuthWrapper: Firebase user: ${firebaseUser?.uid ?? 'null'}');
@@ -88,42 +100,17 @@ class _AuthWrapperState extends State<AuthWrapper>
         }
       } catch (e) {
         print('AuthWrapper: Firebase not available: $e');
-        // Continue with SharedPreferences check
+        // If Firebase is not available, authentication cannot work
+        // This ensures security - no fallback to local storage
+        print(
+          'AuthWrapper: Firebase authentication required - no fallback available',
+        );
       }
 
-      // Check SharedPreferences as fallback
-      final userData = await AuthService.getUserData();
-      final isLoggedIn = userData['isLoggedIn'] ?? false;
-      final userName = userData['userName'] ?? '';
-      final userEmail = userData['userEmail'] ?? '';
-      final lastLoginTime = userData['lastLoginTime'] ?? 0;
-
+      // No fallback authentication - user must authenticate through Firebase
       print(
-        'AuthWrapper: SharedPreferences - isLoggedIn: $isLoggedIn, userName: $userName',
+        'AuthWrapper: User is not logged in - Firebase authentication required',
       );
-
-      if (isLoggedIn && userName.isNotEmpty) {
-        // Check if session is still valid (7 days)
-        final currentTime = DateTime.now().millisecondsSinceEpoch;
-        final sessionValid =
-            (currentTime - lastLoginTime) < (7 * 24 * 60 * 60 * 1000);
-
-        if (sessionValid) {
-          print('AuthWrapper: Session is valid, user is logged in');
-          setState(() {
-            _isLoggedIn = true;
-            _userName = userName;
-            _userEmail = userEmail;
-            _isLoading = false;
-          });
-          return;
-        } else {
-          print('AuthWrapper: Session expired, clearing preferences');
-          await AuthService.clearUserData();
-        }
-      }
-
-      print('AuthWrapper: User is not logged in');
       setState(() {
         _isLoggedIn = false;
         _isLoading = false;
@@ -145,6 +132,11 @@ class _AuthWrapperState extends State<AuthWrapper>
 
     if (_isLoading) {
       return _buildLoadingScreen();
+    }
+
+    // Check if Firebase is available
+    if (!AuthService.isFirebaseAvailable) {
+      return _buildFirebaseErrorScreen();
     }
 
     if (_isLoggedIn) {
@@ -253,6 +245,94 @@ class _AuthWrapperState extends State<AuthWrapper>
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFirebaseErrorScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF3EFFF),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Error Icon
+                Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.red.withOpacity(0.1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.error_outline,
+                    size: 120,
+                    color: Colors.red[700],
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Error Title
+                Center(
+                  child: Text(
+                    'Authentication Service Unavailable',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Error Message
+                Center(
+                  child: Text(
+                    'The authentication service is currently not available. This could be due to:\n\n• Network connectivity issues\n• Firebase configuration problems\n• Service maintenance\n\nPlease check your internet connection and try again later.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Retry Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isLoading = true;
+                    });
+                    _checkAuthStatus();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ],

@@ -44,8 +44,9 @@ void main() async {
       } catch (e2) {
         print('Firebase initialization with default config also failed: $e2');
         print(
-          'App will continue without Firebase - authentication will work in demo mode',
+          'App requires Firebase to be properly configured for authentication to work',
         );
+        // Continue without Firebase - authentication will not work
       }
     }
 

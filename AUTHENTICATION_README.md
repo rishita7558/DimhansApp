@@ -6,6 +6,7 @@ This document explains how to set up and use the authentication system in the DI
 
 - **User Registration**: New users can create accounts with email and password
 - **User Login**: Existing users can sign in with their credentials
+- **Forgot Password**: Secure password reset through email verification
 - **Bilingual Support**: Both English and Kannada language support
 - **Form Validation**: Comprehensive input validation for all fields
 - **Secure Authentication**: Firebase Authentication integration
@@ -41,6 +42,7 @@ lib/
 ├── auth_wrapper.dart          # Main authentication wrapper
 ├── login_screen.dart          # Login screen
 ├── register_screen.dart       # Registration screen
+├── forgot_password_screen.dart # Forgot password screen
 ├── welcome_screen.dart        # Welcome screen after login
 ├── main.dart                  # Main app entry point
 └── home_screen.dart           # Home screen with logout
@@ -52,8 +54,9 @@ lib/
 2. **Not Logged In**: Shows `LoginScreen`
 3. **Login Success**: Navigates to `WelcomeScreen` briefly, then to main app
 4. **Registration**: Users can navigate to `RegisterScreen` from login
-5. **Logged In**: Direct access to main app
-6. **Logout**: Available from home screen and other screens with app bar
+5. **Forgot Password**: Users can access `ForgotPasswordScreen` from login
+6. **Logged In**: Direct access to main app
+7. **Logout**: Available from home screen and other screens with app bar
 
 ## User Experience
 
@@ -61,12 +64,20 @@ lib/
 - Email and password fields with validation
 - Language toggle (English/Kannada)
 - Link to registration
+- Forgot password link
 - Error handling with user-friendly messages
 
 ### Registration Screen
 - Full name, email, password, and confirm password fields
 - Comprehensive form validation
 - Language toggle support
+- Link back to login
+
+### Forgot Password Screen
+- Email input field with validation
+- Language toggle (English/Kannada)
+- Password reset functionality
+- Success confirmation screen
 - Link back to login
 
 ### Welcome Screen
@@ -112,8 +123,9 @@ To test the authentication system:
 2. Try registering with invalid data to test validation
 3. Register a new account
 4. Test login with the created account
-5. Test logout functionality
-6. Verify persistent login across app restarts
+5. Test forgot password functionality
+6. Test logout functionality
+7. Verify persistent login across app restarts
 
 ## Troubleshooting
 
@@ -130,7 +142,7 @@ Enable debug logging by checking the console for authentication flow messages.
 ## Future Enhancements
 
 Potential improvements:
-- Password reset functionality
+- Enhanced password reset options (SMS, security questions)
 - Social media authentication
 - Biometric authentication
 - Two-factor authentication

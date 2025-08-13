@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'welcome_screen.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,13 +36,13 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('Starting login process...');
       print('Email: ${_emailController.text.trim()}');
-      
+
       // Use the new AuthService for secure authentication
       final result = await AuthService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      
+
       print('User logged in successfully: ${result.user?.uid}');
 
       if (result.user != null && result.isEmailVerified) {
@@ -55,15 +56,16 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           print('Navigating to WelcomeScreen...');
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => WelcomeScreen(
-              userName: result.user!.displayName ?? 'User',
-            )),
+            MaterialPageRoute(
+              builder: (_) =>
+                  WelcomeScreen(userName: result.user!.displayName ?? 'User'),
+            ),
           );
         }
       }
     } on AuthException catch (e) {
       print('AuthException: ${e.code} - ${e.message}');
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -81,10 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       print('Unexpected error during login: $e');
-      String errorMessage = _isEnglish 
-        ? 'An unexpected error occurred: $e'
-        : 'ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ: $e';
-      
+      String errorMessage = _isEnglish
+          ? 'An unexpected error occurred: $e'
+          : 'ಅನಿರೀಕ್ಷಿತ ದೋಷ ಸಂಭವಿಸಿದೆ: $e';
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -137,11 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.language,
-            size: 20,
-            color: theme.primaryColor,
-          ),
+          Icon(Icons.language, size: 20, color: theme.primaryColor),
           const SizedBox(width: 12),
           Text(
             'English',
@@ -191,28 +189,30 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // Enhanced content getters
-  String get _pageTitle => _isEnglish 
-    ? 'Welcome Back'
-    : 'ಮತ್ತೆ ಸುಸ್ವಾಗತ';
+  String get _pageTitle => _isEnglish ? 'Welcome Back' : 'ಮತ್ತೆ ಸುಸ್ವಾಗತ';
 
   String get _subtitle => _isEnglish
-    ? 'Sign in to continue your recovery journey'
-    : 'ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣವನ್ನು ಮುಂದುವರಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ';
+      ? 'Sign in to continue your recovery journey'
+      : 'ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣವನ್ನು ಮುಂದುವರಿಸಲು ಸೈನ್ ಇನ್ ಮಾಡಿ';
 
   String get _emailLabel => _isEnglish ? 'Email' : 'ಇಮೇಲ್';
   String get _passwordLabel => _isEnglish ? 'Password' : 'ಪಾಸ್‌ವರ್ಡ್';
   String get _signInText => _isEnglish ? 'Sign In' : 'ಸೈನ್ ಇನ್';
-  String get _dontHaveAccountText => _isEnglish ? 'Don\'t have an account?' : 'ಖಾತೆ ಇಲ್ಲವೇ?';
+  String get _dontHaveAccountText =>
+      _isEnglish ? 'Don\'t have an account?' : 'ಖಾತೆ ಇಲ್ಲವೇ?';
   String get _createAccountText => _isEnglish ? 'Create Account' : 'ಖಾತೆ ರಚಿಸಿ';
-  String get _forgotPasswordText => _isEnglish ? 'Forgot Password?' : 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರುವಿರಾ?';
-  String get _emailHint => _isEnglish ? 'Enter your email' : 'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
-  String get _passwordHint => _isEnglish ? 'Enter your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
+  String get _forgotPasswordText =>
+      _isEnglish ? 'Forgot Password?' : 'ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರುವಿರಾ?';
+  String get _emailHint =>
+      _isEnglish ? 'Enter your email' : 'ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+  String get _passwordHint =>
+      _isEnglish ? 'Enter your password' : 'ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
 
   @override
   Widget build(BuildContext context) {
     print('LoginScreen build called');
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3EFFF),
       body: SafeArea(
@@ -224,10 +224,10 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Language Toggle
                 _buildLanguageToggle(theme),
-                
+
                 // Enhanced App Logo/Icon
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -242,14 +242,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.login,
-                    size: 80,
-                    color: theme.primaryColor,
-                  ),
+                  child: Icon(Icons.login, size: 80, color: theme.primaryColor),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Enhanced Title
                 Text(
                   _pageTitle,
@@ -261,7 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Enhanced Subtitle
                 Text(
                   _subtitle,
@@ -272,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                
+
                 // Enhanced Email Field
                 _buildEnhancedTextField(
                   controller: _emailController,
@@ -282,16 +278,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return _isEnglish ? 'Please enter your email' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+                      return _isEnglish
+                          ? 'Please enter your email'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
-                      return _isEnglish ? 'Please enter a valid email' : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ನಮೂದಿಸಿ';
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value.trim())) {
+                      return _isEnglish
+                          ? 'Please enter a valid email'
+                          : 'ದಯವಿಟ್ಟು ಮಾನ್ಯ ಇಮೇಲ್ ನಮೂದಿಸಿ';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Enhanced Password Field
                 _buildEnhancedTextField(
                   controller: _passwordController,
@@ -301,7 +303,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      _obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: theme.primaryColor,
                     ),
                     onPressed: () {
@@ -312,25 +316,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return _isEnglish ? 'Please enter your password' : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
+                      return _isEnglish
+                          ? 'Please enter your password'
+                          : 'ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Forgot Password Link
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: Implement forgot password functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_isEnglish 
-                            ? 'Forgot password feature coming soon!'
-                            : 'ಮರೆತ ಪಾಸ್‌ವರ್ಡ್ ವೈಶಿಷ್ಟ್ಯವು ಶೀಘ್ರದಲ್ಲೇ ಬರುತ್ತದೆ!'),
-                          backgroundColor: Colors.blue,
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
                         ),
                       );
                     },
@@ -345,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Enhanced Sign In Button
                 Container(
                   height: 56,
@@ -375,31 +377,34 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     child: _isLoading
-                      ? SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : Text(
+                            _signInText,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                        )
-                      : Text(
-                          _signInText,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Enhanced Create Account Link
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 20,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(12),
@@ -412,15 +417,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         _dontHaveAccountText,
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 16),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(),
+                            ),
                           );
                         },
                         child: Text(
@@ -499,10 +503,13 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
         ),
         validator: validator,
       ),
     );
   }
-} 
+}

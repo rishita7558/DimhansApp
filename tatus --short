@@ -1,0 +1,155 @@
+[1mdiff --git a/AUTHENTICATION_README.md b/AUTHENTICATION_README.md[m
+[1mindex 4558412..bfe5ee6 100644[m
+[1m--- a/AUTHENTICATION_README.md[m
+[1m+++ b/AUTHENTICATION_README.md[m
+[36m@@ -6,6 +6,7 @@[m [mThis document explains how to set up and use the authentication system in the DI[m
+ [m
+ - **User Registration**: New users can create accounts with email and password[m
+ - **User Login**: Existing users can sign in with their credentials[m
+[32m+[m[32m- **Forgot Password**: Secure password reset through email verification[m
+ - **Bilingual Support**: Both English and Kannada language support[m
+ - **Form Validation**: Comprehensive input validation for all fields[m
+ - **Secure Authentication**: Firebase Authentication integration[m
+[36m@@ -41,6 +42,7 @@[m [mlib/[m
+ ├── auth_wrapper.dart          # Main authentication wrapper[m
+ ├── login_screen.dart          # Login screen[m
+ ├── register_screen.dart       # Registration screen[m
+[32m+[m[32m├── forgot_password_screen.dart # Forgot password screen[m
+ ├── welcome_screen.dart        # Welcome screen after login[m
+ ├── main.dart                  # Main app entry point[m
+ └── home_screen.dart           # Home screen with logout[m
+[36m@@ -52,8 +54,9 @@[m [mlib/[m
+ 2. **Not Logged In**: Shows `LoginScreen`[m
+ 3. **Login Success**: Navigates to `WelcomeScreen` briefly, then to main app[m
+ 4. **Registration**: Users can navigate to `RegisterScreen` from login[m
+[31m-5. **Logged In**: Direct access to main app[m
+[31m-6. **Logout**: Available from home screen and other screens with app bar[m
+[32m+[m[32m5. **Forgot Password**: Users can access `ForgotPasswordScreen` from login[m
+[32m+[m[32m6. **Logged In**: Direct access to main app[m
+[32m+[m[32m7. **Logout**: Available from home screen and other screens with app bar[m
+ [m
+ ## User Experience[m
+ [m
+[36m@@ -61,6 +64,7 @@[m [mlib/[m
+ - Email and password fields with validation[m
+ - Language toggle (English/Kannada)[m
+ - Link to registration[m
+[32m+[m[32m- Forgot password link[m
+ - Error handling with user-friendly messages[m
+ [m
+ ### Registration Screen[m
+[36m@@ -69,6 +73,13 @@[m [mlib/[m
+ - Language toggle support[m
+ - Link back to login[m
+ [m
+[32m+[m[32m### Forgot Password Screen[m
+[32m+[m[32m- Email input field with validation[m
+[32m+[m[32m- Language toggle (English/Kannada)[m
+[32m+[m[32m- Password reset functionality[m
+[32m+[m[32m- Success confirmation screen[m
+[32m+[m[32m- Link back to login[m
+[32m+[m
+ ### Welcome Screen[m
+ - Personalized welcome message[m
+ - Brief 2-second display before main app[m
+[36m@@ -112,8 +123,9 @@[m [mTo test the authentication system:[m
+ 2. Try registering with invalid data to test validation[m
+ 3. Register a new account[m
+ 4. Test login with the created account[m
+[31m-5. Test logout functionality[m
+[31m-6. Verify persistent login across app restarts[m
+[32m+[m[32m5. Test forgot password functionality[m
+[32m+[m[32m6. Test logout functionality[m
+[32m+[m[32m7. Verify persistent login across app restarts[m
+ [m
+ ## Troubleshooting[m
+ [m
+[36m@@ -130,7 +142,7 @@[m [mEnable debug logging by checking the console for authentication flow messages.[m
+ ## Future Enhancements[m
+ [m
+ Potential improvements:[m
+[31m-- Password reset functionality[m
+[32m+[m[32m- Enhanced password reset options (SMS, security questions)[m
+ - Social media authentication[m
+ - Biometric authentication[m
+ - Two-factor authentication[m
+[1mdiff --git a/AUTHENTICATION_SECURITY_FIX.md b/AUTHENTICATION_SECURITY_FIX.md[m
+[1mnew file mode 100644[m
+[1mindex 0000000..346d8e6[m
+[1m--- /dev/null[m
+[1m+++ b/AUTHENTICATION_SECURITY_FIX.md[m
+[36m@@ -0,0 +1,107 @@[m
+[32m+[m[32m# Authentication Security Fix[m
+[32m+[m
+[32m+[m[32m## Problem Identified[m
+[32m+[m
+[32m+[m[32mThe DIMHANS app had a **critical security vulnerability** where users could sign in with **any random credentials** (random name and password) and gain access to the app. This was a serious security breach that could allow unauthorized access.[m
+[32m+[m
+[32m+[m[32m## Root Cause[m
+[32m+[m
+[32m+[m[32mThe issue was caused by a **fallback authentication system** that bypassed Firebase authentication when Firebase failed to initialize:[m
+[32m+[m
+[32m+[m[32m1. **Fallback Mechanism**: When Firebase wasn't available, the app would check `SharedPreferences` (local storage) for authentication status[m
+[32m+[m[32m2. **Local Storage Bypass**: If there was any previous login data in local storage, users were considered "logged in"[m
+[32m+[m[32m3. **No Real Authentication**: Random credentials were accepted because the app fell back to local storage instead of requiring proper Firebase authentication[m
+[32m+[m
+[32m+[m[32m## Security Fixes Implemented[m
+[32m+[m
+[32m+[m[32m### 1. Removed Fallback Authentication[m
+[32m+[m[32m- **Before**: App would check local storage when Firebase failed[m
+[32m+[m[32m- **After**: App only authenticates through Firebase - no fallback available[m
+[32m+[m
+[32m+[m[32m### 2. Added Firebase Availability Checks[m
+[32m+[m[32m- Added `isFirebaseAvailable` getter in `AuthService`[m
+[32m+[m[32m- All authentication methods now check if Firebase is available before proceeding[m
+[32m+[m[32m- If Firebase is not available, authentication is blocked[m
+[32m+[m
+[32m+[m[32m### 3. Enhanced Error Handling[m
+[32m+[m[32m- Clear error messages when Firebase is not available[m
+[32m+[m[32m- User-friendly error screen when authentication service is down[m
+[32m+[m[32m- No silent fallbacks to insecure authentication methods[m
+[32m+[m
+[32m+[m[32m### 4. Updated Main App[m
+[32m+[m[32m- Removed misleading "demo mode" messages[m
+[32m+[m[32m- Clear indication that Firebase is required for authentication[m
+[32m+[m
+[32m+[m[32m## Files Modified[m
+[32m+[m
+[32m+[m[32m### `lib/auth_wrapper.dart`[m
+[32m+[m[32m- Removed fallback authentication logic[m
+[32m+[m[32m- Added Firebase availability check[m
+[32m+[m[32m- Added error screen for when Firebase is unavailable[m
+[32m+[m
+[32m+[m[32m### `lib/auth_service.dart`[m
+[32m+[m[32m- Added `isFirebaseAvailable` security check[m
+[32m+[m[32m- Added Firebase availability validation to all authentication methods[m
+[32m+[m[32m- Enhanced error handling for Firebase unavailability[m
+[32m+[m
+[32m+[m[32m### `lib/main.dart`[m
+[32m+[m[32m- Removed misleading "demo mode" messages[m
+[32m+[m[32m- Clear indication that Firebase is required[m
+[32m+[m
+[32m+[m[32m## Security Features Now Active[m
+[32m+[m
+[32m+[m[32m✅ **Firebase Authentication Only**: No authentication without Firebase[m[41m  [m
+[32m+[m[32m✅ **Email Verification Required**: Users must verify email before signing in[m[41m  [m
+[32m+[m[32m✅ **Strong Password Requirements**: 8+ characters with complexity requirements[m[41m  [m
+[32m+[m[32m✅ **No Local Storage Bypass**: Authentication cannot be bypassed through local storage[m[41m  [m
+[32m+[m[32m✅ **Proper Error Handling**: Clear messages when authentication service is unavailable[m[41m  [m
+[32m+[m
+[32m+[m[32m## Testing the Fix[m
+[32m+[m
+[32m+[m[32m### Test 1: Random Credentials (Should Fail)[m
+[32m+[m[32m1. Try to sign in with random email and password[m
+[32m+[m[32m2. **Expected Result**: Authentication should fail with proper error message[m
+[32m+[m[32m3. **Actual Result**: ✅ Authentication now properly fails[m
+[32m+[m
+[32m+[m[32m### Test 2: Firebase Not Available (Should Show Error)[m
+[32m+[m[32m1. Disconnect internet or disable Firebase[m
+[32m+[m[32m2. **Expected Result**: App should show "Authentication Service Unavailable" error[m
+[32m+[m[32m3. **Actual Result**: ✅ App now shows proper error screen[m
+[32m+[m
+[32m+[m[32m### Test 3: Valid Credentials (Should Work)[m
+[32m+[m[32m1. Use real registered account with verified email[m
+[32m+[m[32m2. **Expected Result**: Authentication should succeed[m
+[32m+[m[32m3. **Actual Result
