@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class MoodTrackerScreen extends StatefulWidget {
   final Map<String, dynamic> assessmentAnswers;
-  
+
   const MoodTrackerScreen({super.key, required this.assessmentAnswers});
 
   @override
@@ -17,10 +17,22 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
   int _currentMood = 3; // Default to neutral (scale 1-5)
   String _moodDescription = '';
   final List<String> _selectedTriggers = [];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   final List<String> _selectedCopingStrategies = [];
   bool _isLoading = false;
 
-  final List<String> _moodLabels = ['Very Low', 'Low', 'Neutral', 'Good', 'Excellent'];
+  final List<String> _moodLabels = [
+    'Very Low',
+    'Low',
+    'Neutral',
+    'Good',
+    'Excellent',
+  ];
   final List<String> _moodEmojis = ['😢', '😔', '😐', '🙂', '😊'];
 
   final List<String> _triggers = [
@@ -36,7 +48,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     'Physical pain',
     'Boredom',
     'Celebration',
-    'Other'
+    'Other',
   ];
 
   final List<String> _copingStrategies = [
@@ -50,13 +62,13 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     'Nature walk',
     'Professional help',
     'Support groups',
-    'Other'
+    'Other',
   ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3EFFF),
       appBar: AppBar(
@@ -72,12 +84,12 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           children: [
             // Language Toggle
             _buildLanguageToggle(theme),
-            
+
             // Header
             Text(
-              _isEnglish 
-                ? 'How are you feeling today?'
-                : 'ನೀವು ಇಂದು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?',
+              _isEnglish
+                  ? 'How are you feeling today?'
+                  : 'ನೀವು ಇಂದು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ?',
               style: theme.textTheme.headlineMedium?.copyWith(
                 color: theme.primaryColor,
                 fontWeight: FontWeight.bold,
@@ -87,8 +99,8 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             const SizedBox(height: 8),
             Text(
               _isEnglish
-                ? 'Track your mood to understand patterns and triggers'
-                : 'ನಿಮ್ಮ ಮನಸ್ಥಿತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ ಮತ್ತು ಅದರ ಮಾದರಿಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ',
+                  ? 'Track your mood to understand patterns and triggers'
+                  : 'ನಿಮ್ಮ ಮನಸ್ಥಿತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ ಮತ್ತು ಅದರ ಮಾದರಿಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಿ',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -116,15 +128,19 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _submitMoodEntry,
               child: _isLoading
-                ? SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      _isEnglish
+                          ? 'Save Mood Entry'
+                          : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಉಳಿಸಿ',
                     ),
-                  )
-                : Text(_isEnglish ? 'Save Mood Entry' : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಉಳಿಸಿ'),
             ),
             const SizedBox(height: 16),
 
@@ -146,18 +162,12 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       decoration: BoxDecoration(
         color: theme.primaryColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.primaryColor.withOpacity(0.2),
-        ),
+        border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.language,
-            size: 16,
-            color: theme.primaryColor,
-          ),
+          Icon(Icons.language, size: 16, color: theme.primaryColor),
           const SizedBox(width: 8),
           Text(
             'English',
@@ -171,9 +181,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.primaryColor.withOpacity(0.3),
-              ),
+              border: Border.all(color: theme.primaryColor.withOpacity(0.3)),
             ),
             child: Transform.scale(
               scale: 0.7,
@@ -222,7 +230,7 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Mood Scale
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -240,14 +248,14 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: isSelected 
-                            ? theme.primaryColor 
-                            : Colors.grey[200],
+                          color: isSelected
+                              ? theme.primaryColor
+                              : Colors.grey[200],
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: isSelected 
-                              ? theme.primaryColor 
-                              : Colors.grey[400]!,
+                            color: isSelected
+                                ? theme.primaryColor
+                                : Colors.grey[400]!,
                             width: 2,
                           ),
                         ),
@@ -263,8 +271,12 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
                         _moodLabels[index],
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? theme.primaryColor : Colors.grey[600],
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected
+                              ? theme.primaryColor
+                              : Colors.grey[600],
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -299,9 +311,9 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
             TextField(
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: _isEnglish 
-                  ? 'Describe how you\'re feeling or what\'s on your mind...'
-                  : 'ನೀವು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ ಅಥವಾ ನಿಮ್ಮ ಮನಸ್ಸಿನಲ್ಲಿ ಏನಿದೆ ಎಂದು ವಿವರಿಸಿ...',
+                hintText: _isEnglish
+                    ? 'Describe how you\'re feeling or what\'s on your mind...'
+                    : 'ನೀವು ಹೇಗೆ ಭಾವಿಸುತ್ತಿದ್ದೀರಿ ಅಥವಾ ನಿಮ್ಮ ಮನಸ್ಸಿನಲ್ಲಿ ಏನಿದೆ ಎಂದು ವಿವರಿಸಿ...',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -330,7 +342,9 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              _isEnglish ? 'What triggered this mood?' : 'ಈ ಮನಸ್ಥಿತಿಯನ್ನು ಯಾವುದು ಪ್ರಚೋದಿಸಿತು?',
+              _isEnglish
+                  ? 'What triggered this mood?'
+                  : 'ಈ ಮನಸ್ಥಿತಿಯನ್ನು ಯಾವುದು ಪ್ರಚೋದಿಸಿತು?',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.primaryColor,
@@ -419,18 +433,18 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         // Save to Firestore
-        await FirebaseFirestore.instance
+        final docRef = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .collection('mood_entries')
             .add({
-          'mood_level': _currentMood,
-          'mood_description': _moodDescription,
-          'triggers': _selectedTriggers,
-          'coping_strategies': _selectedCopingStrategies,
-          'timestamp': FieldValue.serverTimestamp(),
-          'assessment_data': widget.assessmentAnswers,
-        });
+              'mood_level': _currentMood,
+              'mood_description': _moodDescription,
+              'triggers': _selectedTriggers,
+              'coping_strategies': _selectedCopingStrategies,
+              'timestamp': FieldValue.serverTimestamp(),
+              'assessment_data': widget.assessmentAnswers,
+            });
 
         // Save to local storage for offline access
         final prefs = await SharedPreferences.getInstance();
@@ -448,14 +462,16 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(_isEnglish 
-                ? 'Mood entry saved successfully!'
-                : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!'),
+              content: Text(
+                _isEnglish
+                    ? 'Mood entry saved successfully!'
+                    : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ!',
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
           );
-          
+
           // Navigate back to home
           Navigator.of(context).pop();
         }
@@ -464,9 +480,11 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEnglish 
-              ? 'Error saving mood entry. Please try again.'
-              : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.'),
+            content: Text(
+              _isEnglish
+                  ? 'Error saving mood entry. Please try again.'
+                  : 'ಮನಸ್ಥಿತಿ ನಮೂದನ್ನು ಉಳಿಸುವಲ್ಲಿ ದೋಷ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+            ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -480,4 +498,4 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
       }
     }
   }
-} 
+}

@@ -72,36 +72,6 @@ class AuthService {
     }
   }
 
-  // Ensure user exists in Firestore
-  static Future<void> _ensureUserInFirestore(User user) async {
-    try {
-      // Only create user in Firestore if email is verified
-      if (!user.emailVerified) {
-        print(
-          'User email not verified, not creating Firestore document: ${user.email}',
-        );
-        return;
-      }
-
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-
-      if (!userDoc.exists) {
-        // Create user document if it doesn't exist and email is verified
-        await _firestore.collection('users').doc(user.uid).set({
-          'email': user.email ?? '',
-          'displayName': user.displayName ?? 'User',
-          'isAdmin': false, // Default to regular user
-          'isActive': true,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-        print('Created verified user in Firestore: ${user.email}');
-      }
-    } catch (e) {
-      print('Error ensuring user in Firestore: $e');
-    }
-  }
-
   // Update last login time
   static Future<void> _updateLastLogin(String uid) async {
     try {
@@ -151,9 +121,16 @@ class AuthService {
         password: password,
       );
 
-      // Update display name
+      // Update display name and save to Firestore
       if (userCredential.user != null) {
         await userCredential.user!.updateDisplayName(displayName.trim());
+
+        // Save user data to Firestore
+        await _saveUserToFirestore(
+          uid: userCredential.user!.uid,
+          email: email.trim(),
+          displayName: displayName.trim(),
+        );
 
         // Send email verification
         await userCredential.user!.sendEmailVerification();
@@ -212,8 +189,7 @@ class AuthService {
         throw AuthException(code: 'user-not-found', message: 'User not found');
       }
 
-      // Ensure user exists in Firestore and update last login time
-      await _ensureUserInFirestore(user);
+      // Update last login time in Firestore
       await _updateLastLogin(user.uid);
 
       // Check if email is verified

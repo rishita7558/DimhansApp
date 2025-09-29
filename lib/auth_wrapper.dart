@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import 'welcome_screen.dart';
+import 'migrate_users.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -82,6 +83,10 @@ class _AuthWrapperState extends State<AuthWrapper>
 
         if (firebaseUser != null && AuthService.isEmailVerified) {
           print('AuthWrapper: User is logged in and verified via Firebase');
+
+          // Migrate user to Firestore if not already there
+          await UserMigration.migrateUser(firebaseUser);
+
           setState(() {
             _isLoggedIn = true;
             _userName = firebaseUser.displayName ?? 'User';

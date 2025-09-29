@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:dimhans_app/learn_screen.dart'; // Added import for LearnScreen
 import 'package:url_launcher/url_launcher.dart';
 import 'mood_tracker_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
@@ -40,6 +42,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     if (_step == 2) {
       if (_formKey.currentState?.validate() ?? false) {
         setState(() => _step++);
+        // Save assessment data when completed
+        _saveAssessmentData();
       }
     } else {
       setState(() => _step++);
@@ -48,6 +52,51 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   void _back() {
     if (_step > 0) setState(() => _step--);
+  }
+
+  Future<void> _saveAssessmentData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Calculate assessment score
+        int score = 0;
+        if (_answers['q1'] == 'Yes') score += 1;
+
+        switch (_answers['q2']) {
+          case 'Daily':
+            score += 4;
+            break;
+          case 'Weekly':
+            score += 3;
+            break;
+          case 'Monthly':
+            score += 2;
+            break;
+          case 'Rarely':
+            score += 1;
+            break;
+        }
+
+        if (_answers['q4'] is List) {
+          score += (_answers['q4'] as List).length;
+        }
+
+        if (_answers['q5'] == 'No') score += 2;
+
+        // Save to Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('assessments')
+            .add({
+              'score': score,
+              'answers': _answers,
+              'timestamp': FieldValue.serverTimestamp(),
+            });
+      }
+    } catch (e) {
+      print('Error saving assessment data: $e');
+    }
   }
 
   Widget _buildStep() {
@@ -115,31 +164,39 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Please enter your age';
                 final age = int.tryParse(val);
-                if (age == null || age < 0 || age > 120) return 'Enter a valid age';
+                if (age == null || age < 0 || age > 120)
+                  return 'Enter a valid age';
                 return null;
               },
             ),
           ),
-          onNext: (_answers['q3'] != null && _answers['q3'].toString().isNotEmpty) ? _next : null,
+          onNext:
+              (_answers['q3'] != null && _answers['q3'].toString().isNotEmpty)
+              ? _next
+              : null,
           onBack: _back,
         );
       case 3:
         return _questionStep(
           'What made you consume alcohol?',
           Column(
-            children: _reasons.map((opt) => CheckboxListTile(
-              title: Text(opt),
-              value: (_answers['q4'] as List<String>).contains(opt),
-              onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    (_answers['q4'] as List<String>).add(opt);
-                  } else {
-                    (_answers['q4'] as List<String>).remove(opt);
-                  }
-                });
-              },
-            )).toList(),
+            children: _reasons
+                .map(
+                  (opt) => CheckboxListTile(
+                    title: Text(opt),
+                    value: (_answers['q4'] as List<String>).contains(opt),
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          (_answers['q4'] as List<String>).add(opt);
+                        } else {
+                          (_answers['q4'] as List<String>).remove(opt);
+                        }
+                      });
+                    },
+                  ),
+                )
+                .toList(),
           ),
           onNext: (_answers['q4'] as List).isNotEmpty ? _next : null,
           onBack: _back,
@@ -186,7 +243,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 leading: const Icon(Icons.location_on),
                 onTap: () async {
                   // Open Google Maps with a search for psychiatrists near the user
-                  final url = Uri.parse('https://www.google.com/maps/search/psychiatrist+near+me/');
+                  final url = Uri.parse(
+                    'https://www.google.com/maps/search/psychiatrist+near+me/',
+                  );
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   }
@@ -196,7 +255,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                 title: const Text('Contact Our Team (dummy)'),
                 leading: const Icon(Icons.email),
                 onTap: () async {
-                  final uri = Uri.parse('mailto:support@dimhans.org?subject=Support%20Request');
+                  final uri = Uri.parse(
+                    'mailto:support@dimhans.org?subject=Support%20Request',
+                  );
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
                   }
@@ -232,15 +293,16 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(question, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+        Text(
+          question,
+          style: Theme.of(context).textTheme.titleLarge,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 24),
         child,
         const SizedBox(height: 32),
         if (!isFirst)
-          OutlinedButton(
-            onPressed: onBack,
-            child: const Text('Back'),
-          ),
+          OutlinedButton(onPressed: onBack, child: const Text('Back')),
         const SizedBox(height: 12),
         ElevatedButton(
           onPressed: onNext,
@@ -253,7 +315,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   Widget _resultScreen() {
     String message = 'Thank you for completing the assessment!';
     if (_answers['q1'] == 'Yes') {
-      message += '\nWe recommend exploring craving management skills and talking to a professional.';
+      message +=
+          '\nWe recommend exploring craving management skills and talking to a professional.';
     } else {
       message += '\nStay informed and support others!';
     }
@@ -261,31 +324,37 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Assessment Result', style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+        Text(
+          'Assessment Result',
+          style: Theme.of(context).textTheme.titleLarge,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 24),
-        Text(message, style: Theme.of(context).textTheme.bodyLarge, textAlign: TextAlign.center),
+        Text(
+          message,
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 32),
-        
-        // Show mood tracker button only for alcohol users
-        if (_answers['q1'] == 'Yes') ...[
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => MoodTrackerScreen(assessmentAnswers: _answers),
-                ),
-              );
-            },
-            icon: const Icon(Icons.mood),
-            label: const Text('Track Your Mood'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              foregroundColor: Colors.white,
-            ),
+
+        // Always show mood tracker button to save assessment data
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MoodTrackerScreen(assessmentAnswers: _answers),
+              ),
+            );
+          },
+          icon: const Icon(Icons.mood),
+          label: const Text('Track Your Mood'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[600],
+            foregroundColor: Colors.white,
           ),
-          const SizedBox(height: 16),
-        ],
-        
+        ),
+        const SizedBox(height: 16),
+
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Back to Home'),
@@ -295,7 +364,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           onPressed: () {
             // Navigate to Learn screen with Awareness tab (index 2)
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const LearnScreen(initialTabIndex: 2)),
+              MaterialPageRoute(
+                builder: (_) => const LearnScreen(initialTabIndex: 2),
+              ),
             );
           },
           child: const Text('Learn More / Get Support'),
@@ -306,22 +377,40 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('DEBUG: AssessmentScreen build called');
     return Scaffold(
       appBar: AppBar(title: const Text('Self-Assessment')),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+            padding: const EdgeInsets.only(
+              top: 16,
+              left: 16,
+              right: 16,
+              bottom: 8,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text('English', style: TextStyle(fontWeight: lang == 'en' ? FontWeight.bold : FontWeight.normal)),
+                Text(
+                  'English',
+                  style: TextStyle(
+                    fontWeight: lang == 'en'
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
                 Switch(
                   value: lang == 'kn',
                   onChanged: (v) => setState(() => lang = v ? 'kn' : 'en'),
                 ),
-                Text('Kannada', style: TextStyle(fontWeight: lang == 'kn' ? FontWeight.bold : FontWeight.normal)),
+                Text(
+                  'Kannada',
+                  style: TextStyle(
+                    fontWeight: lang == 'kn'
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
               ],
             ),
           ),
@@ -350,8 +439,7 @@ class AssessmentKannadaContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Text(
-        """
+      child: Text("""
 ನನಗೆ ವೈದ್ಯಕೀಯ ಸಹಾಯ ಬೇಕೇ ಎಂಬುದು ನನಗೆ ಹೇಗೆ ತಿಳಿಯುವುದು?
 
 ಕೆಳಗಿನ ಈ ಪ್ರಶ್ನೆಗಳ ಬಗ್ಗೆ ಯೋಚಿಸುವಷ್ಟು ಸಮರ್ಥ ಸಮಯ ತಗೊಳ್ಳಿ...
@@ -365,9 +453,7 @@ class AssessmentKannadaContent extends StatelessWidget {
 ೪. ಕಣ್ಣ ತಿರುಗುವಂತೆ ಬೆನ್ನುಗೆ ನೋವು ವೈದ್ಯಕೀಯವಾಗಿತ್ತಾ?
 
 ಮೇಲಿನ ಪ್ರಶ್ನೆಗಳಲ್ಲಿ ಒಂದಕ್ಕೆ ನಿಮ್ಮ ಹೌದು ಉತ್ತರಿದರೆ, ನಿಮಗೆ ಕೊಡಬೇಕಾದ ಸಹಾಯ ಇರಬಹುದು, ಮತ್ತು ಮೇಲಿನ ಎರೆಡು ಅಥವಾ ಹೆಚ್ಚು ಪ್ರಶ್ನೆಗಳಿಗೆ ಹೌದು ಎಂದಾದರೆ, ನಿಮಗೆ ಕೊಡಬೇಕಾದ ಸಹಾಯ ಇನ್ನೂ ಸೂಕ್ತತೆ ಹಚ್ಚುವ ವೈದ್ಯಕೀಯ ಸಹಾಯದ ಅಗತ್ಯವಿದೆ.
-""",
-        style: const TextStyle(fontSize: 18),
-      ),
+""", style: const TextStyle(fontSize: 18)),
     );
   }
-} 
+}

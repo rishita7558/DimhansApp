@@ -115,7 +115,7 @@ class DimhansApp extends StatelessWidget {
     try {
       return MaterialApp(
         title: 'DIMHANS Alcohol Support',
-        debugShowCheckedModeBanner: true,
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primarySwatch: Colors.blue,
           primaryColor: Colors.blue[800],
@@ -184,7 +184,6 @@ class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
   void _showAssessment(BuildContext context) async {
-    print('DEBUG: _showAssessment called, navigating to AssessmentScreen');
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const AssessmentScreen()));

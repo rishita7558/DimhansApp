@@ -3,6 +3,7 @@ import 'auth_service.dart';
 import 'welcome_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'admin_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -431,6 +432,48 @@ class _LoginScreenState extends State<LoginScreen> {
                           _createAccountText,
                           style: TextStyle(
                             color: theme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Admin Login Button
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings,
+                        color: Colors.red[700],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const AdminLoginScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Admin Login',
+                          style: TextStyle(
+                            color: Colors.red[700],
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),

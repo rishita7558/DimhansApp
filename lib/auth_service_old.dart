@@ -1,10 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Check if Firebase is properly initialized
   static bool get isFirebaseAvailable {
@@ -50,67 +48,6 @@ class AuthService {
   // Email validation
   static bool isEmailValid(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim());
-  }
-
-  // Save user data to Firestore
-  static Future<void> _saveUserToFirestore({
-    required String uid,
-    required String email,
-    required String displayName,
-  }) async {
-    try {
-      await _firestore.collection('users').doc(uid).set({
-        'email': email,
-        'displayName': displayName,
-        'isAdmin': false,
-        'isActive': true,
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error saving user to Firestore: $e');
-    }
-  }
-
-  // Ensure user exists in Firestore
-  static Future<void> _ensureUserInFirestore(User user) async {
-    try {
-      // Only create user in Firestore if email is verified
-      if (!user.emailVerified) {
-        print(
-          'User email not verified, not creating Firestore document: ${user.email}',
-        );
-        return;
-      }
-
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-
-      if (!userDoc.exists) {
-        // Create user document if it doesn't exist and email is verified
-        await _firestore.collection('users').doc(user.uid).set({
-          'email': user.email ?? '',
-          'displayName': user.displayName ?? 'User',
-          'isAdmin': false, // Default to regular user
-          'isActive': true,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-        print('Created verified user in Firestore: ${user.email}');
-      }
-    } catch (e) {
-      print('Error ensuring user in Firestore: $e');
-    }
-  }
-
-  // Update last login time
-  static Future<void> _updateLastLogin(String uid) async {
-    try {
-      await _firestore.collection('users').doc(uid).update({
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error updating last login: $e');
-    }
   }
 
   // Sign up with email and password
@@ -211,10 +148,6 @@ class AuthService {
       if (user == null) {
         throw AuthException(code: 'user-not-found', message: 'User not found');
       }
-
-      // Ensure user exists in Firestore and update last login time
-      await _ensureUserInFirestore(user);
-      await _updateLastLogin(user.uid);
 
       // Check if email is verified
       if (!user.emailVerified) {

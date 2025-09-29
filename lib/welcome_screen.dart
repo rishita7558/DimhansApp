@@ -3,14 +3,15 @@ import 'main.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final String userName;
-  
+
   const WelcomeScreen({super.key, required this.userName});
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _scaleController;
@@ -22,46 +23,35 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _scaleController,
-      curve: Curves.elasticOut,
-    ));
-    
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    );
+
     _startAnimations();
   }
 
@@ -110,11 +100,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.language,
-            size: 20,
-            color: theme.primaryColor,
-          ),
+          Icon(Icons.language, size: 20, color: theme.primaryColor),
           const SizedBox(width: 12),
           Text(
             'English',
@@ -164,24 +150,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
   }
 
   // Enhanced content getters
-  String get _welcomeTitle => _isEnglish 
-    ? 'Welcome to DIMHANS'
-    : 'ಡಿಮ್ಹಾನ್ಸ್‌ಗೆ ಸುಸ್ವಾಗತ';
+  String get _welcomeTitle =>
+      _isEnglish ? 'Welcome to DIMHANS' : 'ಡಿಮ್ಹಾನ್ಸ್‌ಗೆ ಸುಸ್ವಾಗತ';
 
   String get _welcomeMessage => _isEnglish
-    ? 'Hello ${widget.userName}! We\'re here to support your recovery journey.'
-    : 'ನಮಸ್ಕಾರ ${widget.userName}! ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣದಲ್ಲಿ ನಿಮಗೆ ಬೆಂಬಲಿಸಲು ನಾವು ಇಲ್ಲಿದ್ದೇವೆ.';
+      ? 'Hello ${widget.userName}! We\'re here to support your recovery journey.'
+      : 'ನಮಸ್ಕಾರ ${widget.userName}! ನಿಮ್ಮ ಪುನರ್ವಸತಿ ಪ್ರಯಾಣದಲ್ಲಿ ನಿಮಗೆ ಬೆಂಬಲಿಸಲು ನಾವು ಇಲ್ಲಿದ್ದೇವೆ.';
 
   String get _getStartedText => _isEnglish ? 'Get Started' : 'ಪ್ರಾರಂಭಿಸಿ';
-  String get _description => _isEnglish 
-    ? 'Your personalized alcohol support and recovery companion is ready to help you every step of the way.'
-    : 'ನಿಮ್ಮ ವೈಯಕ್ತಿಕ ಮದ್ಯ ಬೆಂಬಲ ಮತ್ತು ಪುನರ್ವಸತಿ ಸಂಗಾತಿ ಪ್ರತಿ ಹೆಜ್ಜೆಯಲ್ಲೂ ನಿಮಗೆ ಸಹಾಯ ಮಾಡಲು ಸಿದ್ಧವಾಗಿದೆ.';
+  String get _description => _isEnglish
+      ? 'Your personalized alcohol support and recovery companion is ready to help you every step of the way.'
+      : 'ನಿಮ್ಮ ವೈಯಕ್ತಿಕ ಮದ್ಯ ಬೆಂಬಲ ಮತ್ತು ಪುನರ್ವಸತಿ ಸಂಗಾತಿ ಪ್ರತಿ ಹೆಜ್ಜೆಯಲ್ಲೂ ನಿಮಗೆ ಸಹಾಯ ಮಾಡಲು ಸಿದ್ಧವಾಗಿದೆ.';
 
   @override
   Widget build(BuildContext context) {
     print('WelcomeScreen build called');
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3EFFF),
       body: SafeArea(
@@ -191,12 +176,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              
+
               // Enhanced Language Toggle
               _buildLanguageToggle(theme),
-              
+
               const SizedBox(height: 40),
-              
+
               // Enhanced Welcome Icon with Animation
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -228,7 +213,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Enhanced Welcome Title with Animation
               SlideTransition(
                 position: _slideAnimation,
@@ -246,7 +231,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Enhanced Welcome Message with Animation
               SlideTransition(
                 position: _slideAnimation,
@@ -264,7 +249,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Enhanced Description with Animation
               SlideTransition(
                 position: _slideAnimation,
@@ -299,7 +284,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 60),
-              
+
               // Enhanced Get Started Button with Animation
               ScaleTransition(
                 scale: _scaleAnimation,
@@ -325,9 +310,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                     ),
                     child: ElevatedButton(
                       onPressed: () {
-                        print('DEBUG: Get Started button pressed, navigating to MainNavigation');
                         Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const MainNavigation()),
+                          MaterialPageRoute(
+                            builder: (_) => const MainNavigation(),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -360,7 +346,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 40),
             ],
           ),
@@ -368,4 +354,4 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
       ),
     );
   }
-} 
+}
