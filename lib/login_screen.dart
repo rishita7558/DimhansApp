@@ -229,21 +229,34 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Enhanced Language Toggle
                 _buildLanguageToggle(theme),
 
-                // Enhanced App Logo/Icon
+                // Enhanced DIMHANS Logo
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: theme.primaryColor.withOpacity(0.1),
+                    color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.primaryColor.withOpacity(0.2),
+                        color: Colors.grey.withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: Icon(Icons.login, size: 80, color: theme.primaryColor),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Error loading logo in login screen: $error');
+                      return Icon(
+                        Icons.image_not_supported,
+                        size: 120,
+                        color: theme.primaryColor,
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 24),
 

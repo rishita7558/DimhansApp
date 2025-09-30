@@ -182,33 +182,35 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
               const SizedBox(height: 40),
 
-              // Enhanced Welcome Icon with Animation
+              // Enhanced DIMHANS Logo with Animation
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.primaryColor.withOpacity(0.2),
-                        theme.primaryColor.withOpacity(0.1),
-                      ],
-                    ),
+                    color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: theme.primaryColor.withOpacity(0.3),
+                        color: Colors.grey.withOpacity(0.3),
                         blurRadius: 30,
                         offset: const Offset(0, 15),
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.celebration,
-                    size: 100,
-                    color: theme.primaryColor,
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 160,
+                    height: 160,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      print('Error loading logo: $error');
+                      return Icon(
+                        Icons.image_not_supported,
+                        size: 160,
+                        color: theme.primaryColor,
+                      );
+                    },
                   ),
                 ),
               ),
