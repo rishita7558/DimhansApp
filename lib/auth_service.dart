@@ -59,6 +59,10 @@ class AuthService {
     required String displayName,
   }) async {
     try {
+      print(
+        'Debug: Saving user to Firestore - UID: $uid, Email: $email, Name: $displayName',
+      );
+
       await _firestore.collection('users').doc(uid).set({
         'email': email,
         'displayName': displayName,
@@ -67,6 +71,8 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
         'lastLoginAt': FieldValue.serverTimestamp(),
       });
+
+      print('Debug: User saved successfully to Firestore');
     } catch (e) {
       print('Error saving user to Firestore: $e');
     }
@@ -151,9 +157,16 @@ class AuthService {
         password: password,
       );
 
-      // Update display name
+      // Update display name and save to Firestore
       if (userCredential.user != null) {
         await userCredential.user!.updateDisplayName(displayName.trim());
+
+        // Save user data to Firestore immediately (even if email not verified)
+        await _saveUserToFirestore(
+          uid: userCredential.user!.uid,
+          email: email.trim(),
+          displayName: displayName.trim(),
+        );
 
         // Send email verification
         await userCredential.user!.sendEmailVerification();

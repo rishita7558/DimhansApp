@@ -40,6 +40,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
         _userDetails = userDetails;
         _isLoading = false;
       });
+
+      // Debug: Check assessments for this user
+      await AdminService.debugUserAssessments(widget.userId);
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -298,15 +301,35 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
 
   Widget _buildAssessmentsTab() {
     if (_userDetails!.assessments.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.quiz_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
+            const Icon(Icons.quiz_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
               'No assessments found',
               style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await _loadUserDetails();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Data refreshed'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh Data'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),

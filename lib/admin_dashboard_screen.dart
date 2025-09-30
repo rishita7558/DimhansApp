@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_service.dart';
 import 'user_details_screen.dart';
-import 'migrate_users.dart';
-import 'auth_service.dart';
+import 'admin_management_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -19,6 +18,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _recentMoodEntries = [];
 
   @override
   void initState() {
@@ -30,6 +30,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRecentMoodEntries() async {
+    try {
+      final querySnapshot = await _firestore
+          .collectionGroup('mood_entries')
+          .orderBy('timestamp', descending: true)
+          .limit(10)
+          .get();
+
+      _recentMoodEntries = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'mood_level': data['mood_level'] ?? 0,
+          'mood_description': data['mood_description'] ?? '',
+          'triggers': data['triggers'] ?? [],
+          'coping_strategies': data['coping_strategies'] ?? [],
+          'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+          'user_email': data['user_email'] ?? 'Unknown',
+        };
+      }).toList();
+    } catch (e) {
+      print('Error loading recent mood entries: $e');
+      _recentMoodEntries = [];
+    }
   }
 
   Future<void> _loadData() async {
@@ -53,6 +79,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       print('Loaded ${users.length} users from AdminService');
       final stats = await AdminService.getUserStats();
       print('Loaded stats: $stats');
+
+      await _loadRecentMoodEntries();
 
       setState(() {
         _users = users;
@@ -148,6 +176,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const AdminManagementScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.admin_panel_settings),
+            tooltip: 'Manage Admins',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadData,
             tooltip: 'Refresh',
@@ -166,6 +205,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 // Stats Cards
                 _buildStatsCards(),
 
+                // Recent Mood Entries
+                _buildRecentMoodEntries(),
+
                 // Search Bar
                 _buildSearchBar(),
 
@@ -173,6 +215,136 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Expanded(child: _buildUsersList()),
               ],
             ),
+    );
+  }
+
+  Widget _buildRecentMoodEntries() {
+    if (_recentMoodEntries.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mood, color: Colors.orange[600], size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Recent Mood Entries',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...(_recentMoodEntries
+              .take(5)
+              .map((entry) => _buildMoodEntryCard(entry))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoodEntryCard(Map<String, dynamic> entry) {
+    final moodLabels = ['Very Low', 'Low', 'Neutral', 'Good', 'Excellent'];
+    final moodColors = [
+      Colors.red[400]!,
+      Colors.orange[400]!,
+      Colors.yellow[600]!,
+      Colors.lightGreen[400]!,
+      Colors.green[400]!,
+    ];
+
+    final moodLevel = entry['mood_level'] as int;
+    final moodLabel = moodLevel > 0 && moodLevel <= 5
+        ? moodLabels[moodLevel - 1]
+        : 'Unknown';
+    final moodColor = moodLevel > 0 && moodLevel <= 5
+        ? moodColors[moodLevel - 1]
+        : Colors.grey;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: moodColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: moodColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: moodColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Center(
+              child: Text(
+                moodLevel.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry['user_email'] ?? 'Unknown User',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  moodLabel,
+                  style: TextStyle(
+                    color: moodColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+                if (entry['mood_description']?.isNotEmpty == true)
+                  Text(
+                    entry['mood_description'],
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            _formatDate(entry['timestamp']),
+            style: TextStyle(color: Colors.grey[500], fontSize: 10),
+          ),
+        ],
+      ),
     );
   }
 

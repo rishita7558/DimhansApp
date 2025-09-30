@@ -42,9 +42,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     if (_step == 2) {
       if (_formKey.currentState?.validate() ?? false) {
         setState(() => _step++);
-        // Save assessment data when completed
-        _saveAssessmentData();
       }
+    } else if (_step == 5) {
+      // Save assessment data when user reaches the final step
+      _saveAssessmentData();
+      setState(() => _step++);
     } else {
       setState(() => _step++);
     }
@@ -58,6 +60,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        print('Debug: Saving assessment for user: ${user.uid}');
+        print('Debug: Assessment answers: $_answers');
+
         // Calculate assessment score
         int score = 0;
         if (_answers['q1'] == 'Yes') score += 1;
@@ -83,8 +88,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
         if (_answers['q5'] == 'No') score += 2;
 
+        print('Debug: Calculated score: $score');
+
         // Save to Firestore
-        await FirebaseFirestore.instance
+        final docRef = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .collection('assessments')
@@ -93,9 +100,33 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               'answers': _answers,
               'timestamp': FieldValue.serverTimestamp(),
             });
+
+        print('Debug: Assessment saved successfully with ID: ${docRef.id}');
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Assessment completed and saved successfully!'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        print('Debug: No user logged in');
       }
     } catch (e) {
       print('Error saving assessment data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving assessment: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

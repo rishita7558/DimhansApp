@@ -1,12 +1,53 @@
 import 'package:flutter/material.dart';
+import 'admin_service.dart';
 
-class DebugScreen extends StatelessWidget {
+class DebugScreen extends StatefulWidget {
   const DebugScreen({super.key});
+
+  @override
+  State<DebugScreen> createState() => _DebugScreenState();
+}
+
+class _DebugScreenState extends State<DebugScreen> {
+  bool _isClearing = false;
+
+  Future<void> _clearAllData() async {
+    setState(() {
+      _isClearing = true;
+    });
+
+    try {
+      final success = await AdminService.clearAllUserData();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'All user data cleared successfully!'
+                  : 'Failed to clear data. Check console for errors.',
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      setState(() {
+        _isClearing = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     print('DebugScreen build called');
-    
+
     return Scaffold(
       backgroundColor: Colors.red[100],
       appBar: AppBar(
@@ -18,11 +59,7 @@ class DebugScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.bug_report,
-              size: 100,
-              color: Colors.red,
-            ),
+            const Icon(Icons.bug_report, size: 100, color: Colors.red),
             const SizedBox(height: 24),
             const Text(
               'Debug Screen Loaded Successfully!',
@@ -70,6 +107,60 @@ class DebugScreen extends StatelessWidget {
               },
               child: const Text('Test Button'),
             ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                border: Border.all(color: Colors.red[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '⚠️ DANGER ZONE ⚠️',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'This will permanently delete ALL user data from the database!',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _isClearing ? null : _clearAllData,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: _isClearing
+                        ? const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text('Clearing Data...'),
+                            ],
+                          )
+                        : const Text('🗑️ Clear ALL User Data'),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -81,4 +172,4 @@ class DebugScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}

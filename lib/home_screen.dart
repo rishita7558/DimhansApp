@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'mood_tracker_screen.dart';
-import 'quick_mood_check_screen.dart';
 import 'mood_history_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -50,9 +49,11 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showQuickMoodEntry(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const QuickMoodCheckScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MoodTrackerScreen(assessmentAnswers: {}),
+      ),
+    );
   }
 
   void _showMoodHistory(BuildContext context) {

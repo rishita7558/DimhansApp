@@ -38,9 +38,15 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .collection('quick_mood_entries')
-            .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-            .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+            .collection('mood_entries')
+            .where(
+              'timestamp',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+            )
+            .where(
+              'timestamp',
+              isLessThanOrEqualTo: Timestamp.fromDate(endDate),
+            )
             .orderBy('timestamp', descending: true)
             .get();
 
@@ -84,8 +90,13 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     if (_moodEntries.isEmpty) return;
 
     final totalEntries = _moodEntries.length;
-    final averageMood = _moodEntries.fold(0.0, (sum, entry) => sum + (entry['mood_level'] as int)) / totalEntries;
-    
+    final averageMood =
+        _moodEntries.fold(
+          0.0,
+          (sum, entry) => sum + (entry['mood_level'] as int),
+        ) /
+        totalEntries;
+
     final moodCounts = <int, int>{};
     for (final entry in _moodEntries) {
       final moodLevel = entry['mood_level'] as int;
@@ -118,7 +129,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF3EFFF),
       appBar: AppBar(
@@ -235,7 +246,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Summary Stats
             Row(
               children: [
@@ -259,7 +270,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Mood Distribution
             Text(
               _isEnglish ? 'Mood Distribution' : 'ಮನಸ್ಥಿತಿ ವಿತರಣೆ',
@@ -269,15 +280,16 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             Column(
               children: List.generate(5, (index) {
                 final moodLevel = index + 1;
                 final count = _moodStats['mood_counts'][moodLevel] ?? 0;
-                final percentage = _moodStats['total_entries'] > 0 
-                    ? (count / _moodStats['total_entries'] * 100).toStringAsFixed(1)
+                final percentage = _moodStats['total_entries'] > 0
+                    ? (count / _moodStats['total_entries'] * 100)
+                          .toStringAsFixed(1)
                     : '0.0';
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: Row(
@@ -295,11 +307,13 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
                       ),
                       Expanded(
                         child: LinearProgressIndicator(
-                          value: _moodStats['total_entries'] > 0 
+                          value: _moodStats['total_entries'] > 0
                               ? count / _moodStats['total_entries']
                               : 0.0,
                           backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(moodColors[index]),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            moodColors[index],
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -325,7 +339,12 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -347,10 +366,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
           ),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -367,20 +383,13 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
           padding: const EdgeInsets.all(40),
           child: Column(
             children: [
-              Icon(
-                Icons.mood_bad,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.mood_bad, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
-                _isEnglish 
-                  ? 'No mood entries found for this period'
-                  : 'ಈ ಅವಧಿಗೆ ಯಾವುದೇ ಮನಸ್ಥಿತಿ ನಮೂದುಗಳು ಕಂಡುಬಂದಿಲ್ಲ',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
+                _isEnglish
+                    ? 'No mood entries found for this period'
+                    : 'ಈ ಅವಧಿಗೆ ಯಾವುದೇ ಮನಸ್ಥಿತಿ ನಮೂದುಗಳು ಕಂಡುಬಂದಿಲ್ಲ',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -405,7 +414,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -413,7 +422,13 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
               itemBuilder: (context, index) {
                 final entry = _moodEntries[index];
                 final moodLevel = entry['mood_level'] as int;
-                final moodLabels = ['Very Low', 'Low', 'Neutral', 'Good', 'Excellent'];
+                final moodLabels = [
+                  'Very Low',
+                  'Low',
+                  'Neutral',
+                  'Good',
+                  'Excellent',
+                ];
                 final moodEmojis = ['😢', '😔', '😐', '🙂', '😊'];
                 final moodColors = [
                   Colors.red[400]!,
@@ -422,7 +437,7 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
                   Colors.lightGreen[400]!,
                   Colors.green[400]!,
                 ];
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
@@ -505,4 +520,4 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
       ),
     );
   }
-} 
+}

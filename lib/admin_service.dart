@@ -6,23 +6,35 @@ class AdminService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Admin email list - in production, this should be stored in Firestore
-  static const List<String> _adminEmails = [
-    'admin@dimhans.com',
-    'admin@example.com',
-    'test@admin.com', // Added for testing
-    'your-email@example.com', // Replace with your actual email
-  ];
-
-  // Check if current user is admin
-  static bool get isAdmin {
+  // Check if current user is admin by checking Firestore
+  static Future<bool> get isAdmin async {
     final user = _auth.currentUser;
     if (user?.email == null) return false;
-    return _adminEmails.contains(user!.email!.toLowerCase());
+
+    try {
+      // Check if user is admin in Firestore
+      final userDoc = await _firestore.collection('users').doc(user!.uid).get();
+
+      if (userDoc.exists) {
+        return userDoc.data()?['isAdmin'] == true;
+      }
+
+      // Also check admins collection for additional admin accounts
+      final adminQuery = await _firestore
+          .collection('admins')
+          .where('email', isEqualTo: user.email!.toLowerCase())
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      return adminQuery.docs.isNotEmpty;
+    } catch (e) {
+      print('Error checking admin status: $e');
+      return false;
+    }
   }
 
   // Get current admin user
-  static User? get currentAdmin => isAdmin ? _auth.currentUser : null;
+  static User? get currentAdmin => _auth.currentUser;
 
   // Create admin account
   static Future<UserCredential?> createAdminAccount({
@@ -73,13 +85,10 @@ class AdminService {
       );
 
       if (userCredential.user != null) {
-        // Check if user is admin in Firestore
-        final userDoc = await _firestore
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .get();
+        // Check if user is admin using the new async method
+        final isAdminUser = await isAdmin;
 
-        if (userDoc.exists && userDoc.data()?['isAdmin'] == true) {
+        if (isAdminUser) {
           // Save admin session
           await _saveAdminSession(email);
           return true;
@@ -124,35 +133,39 @@ class AdminService {
     try {
       final querySnapshot = await _firestore.collection('users').get();
 
-      return querySnapshot.docs
-          .where((doc) {
-            final data = doc.data();
-            final isAdmin = data['isAdmin'] == true;
-            final email = data['email'] ?? '';
+      final allDocs = querySnapshot.docs;
+      print('Debug: Total documents in users collection: ${allDocs.length}');
 
-            // Also check if this is a known admin email (for existing accounts)
-            final knownAdminEmails = [
-              'poddaturimithil1@gmail.com',
-              'poddaturimit1@gmail.com',
-              'poddaturimit@gmail.com',
-            ];
-            final isKnownAdmin = knownAdminEmails.contains(email);
+      for (var doc in allDocs) {
+        final data = doc.data();
+        final isAdmin = data['isAdmin'] == true;
+        final email = data['email'] ?? 'No email';
+        print('Debug: Document ${doc.id}: email=$email, isAdmin=$isAdmin');
+      }
 
-            // Filter out admin accounts (either by isAdmin flag OR known admin emails)
-            return !isAdmin && !isKnownAdmin;
-          })
-          .map((doc) {
-            final data = doc.data();
-            return UserData(
-              uid: doc.id,
-              email: data['email'] ?? '',
-              displayName: data['displayName'] ?? '',
-              createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
-              lastLoginAt: data['lastLoginAt']?.toDate(),
-              isActive: data['isActive'] ?? true,
-            );
-          })
-          .toList();
+      final filteredDocs = allDocs.where((doc) {
+        final data = doc.data();
+        final isAdmin = data['isAdmin'] == true;
+
+        // Filter out admin accounts (only by isAdmin flag)
+        return !isAdmin;
+      }).toList();
+
+      print(
+        'Debug: After filtering out admins: ${filteredDocs.length} regular users',
+      );
+
+      return filteredDocs.map((doc) {
+        final data = doc.data();
+        return UserData(
+          uid: doc.id,
+          email: data['email'] ?? '',
+          displayName: data['displayName'] ?? '',
+          createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+          lastLoginAt: data['lastLoginAt']?.toDate(),
+          isActive: data['isActive'] ?? true,
+        );
+      }).toList();
     } catch (e) {
       print('Error getting users: $e');
       return [];
@@ -206,7 +219,7 @@ class AdminService {
       final moodQuery = await _firestore
           .collection('users')
           .doc(userId)
-          .collection('quick_mood_entries')
+          .collection('mood_entries')
           .get();
 
       final moodEntries = moodQuery.docs.map((doc) {
@@ -242,35 +255,6 @@ class AdminService {
       }).toList();
 
       // Sort by timestamp descending (most recent first)
-      assessments.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-      // Also get assessment data from mood entries
-      final moodAssessmentQuery = await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('mood_entries')
-          .get();
-
-      final moodAssessments = moodAssessmentQuery.docs
-          .where((doc) {
-            final data = doc.data();
-            return data['assessment_data'] != null;
-          })
-          .map((doc) {
-            final data = doc.data();
-            final assessmentData =
-                data['assessment_data'] as Map<String, dynamic>? ?? {};
-            return AssessmentData(
-              id: '${doc.id}_assessment',
-              score: _calculateAssessmentScore(assessmentData),
-              answers: assessmentData,
-              timestamp: data['timestamp']?.toDate() ?? DateTime.now(),
-            );
-          })
-          .toList();
-
-      // Combine both assessment sources
-      assessments.addAll(moodAssessments);
       assessments.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       // Get craving skills usage
@@ -350,7 +334,7 @@ class AdminService {
   static Future<int> _getTotalMoodEntries() async {
     try {
       final querySnapshot = await _firestore
-          .collectionGroup('quick_mood_entries')
+          .collectionGroup('mood_entries')
           .get();
       return querySnapshot.docs.length;
     } catch (e) {
@@ -376,38 +360,251 @@ class AdminService {
     }
   }
 
-  // Calculate assessment score based on answers
-  static int _calculateAssessmentScore(Map<String, dynamic> answers) {
-    int score = 0;
+  // Debug function to check assessments for a user
+  static Future<void> debugUserAssessments(String userId) async {
+    try {
+      print('Debug: Checking assessments for user: $userId');
 
-    // Question 1: Do you consume alcohol? (Yes = 1, No = 0)
-    if (answers['q1'] == 'Yes') score += 1;
+      // Check assessments collection
+      final assessmentQuery = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('assessments')
+          .get();
 
-    // Question 2: How often? (More frequent = higher score)
-    switch (answers['q2']) {
-      case 'Daily':
-        score += 4;
-        break;
-      case 'Weekly':
-        score += 3;
-        break;
-      case 'Monthly':
-        score += 2;
-        break;
-      case 'Rarely':
-        score += 1;
-        break;
+      print(
+        'Debug: Found ${assessmentQuery.docs.length} assessments in assessments collection',
+      );
+
+      for (var doc in assessmentQuery.docs) {
+        final data = doc.data();
+        print(
+          'Debug: Assessment ${doc.id}: score=${data['score']}, timestamp=${data['timestamp']}',
+        );
+      }
+
+      // Check mood entries for assessment data
+      final moodQuery = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('mood_entries')
+          .get();
+
+      int moodAssessments = 0;
+      for (var doc in moodQuery.docs) {
+        final data = doc.data();
+        if (data['assessment_data'] != null) {
+          moodAssessments++;
+          print(
+            'Debug: Mood entry ${doc.id} has assessment data: ${data['assessment_data']}',
+          );
+        }
+      }
+
+      print('Debug: Found $moodAssessments mood entries with assessment data');
+    } catch (e) {
+      print('Debug: Error checking assessments: $e');
     }
+  }
 
-    // Question 4: Reasons (more reasons = higher risk)
-    if (answers['q4'] is List) {
-      score += (answers['q4'] as List).length;
+  // Clear all user data from the database AND Firebase Auth
+  static Future<bool> clearAllUserData() async {
+    try {
+      print('Debug: Starting to clear all user data...');
+
+      // Get all users from Firestore
+      final usersQuery = await _firestore.collection('users').get();
+      print(
+        'Debug: Found ${usersQuery.docs.length} users in Firestore to clear',
+      );
+
+      int totalDeleted = 0;
+
+      for (var userDoc in usersQuery.docs) {
+        final userId = userDoc.id;
+        print('Debug: Clearing data for user: $userId');
+
+        // Delete all subcollections for this user
+        final subcollections = [
+          'assessments',
+          'mood_entries',
+          'quick_mood_entries',
+          'cravingSkills',
+        ];
+
+        for (String subcollection in subcollections) {
+          final subQuery = await _firestore
+              .collection('users')
+              .doc(userId)
+              .collection(subcollection)
+              .get();
+
+          print(
+            'Debug: Found ${subQuery.docs.length} documents in $subcollection',
+          );
+
+          // Delete all documents in subcollection
+          for (var doc in subQuery.docs) {
+            await doc.reference.delete();
+            totalDeleted++;
+          }
+        }
+
+        // Delete the user document itself
+        await userDoc.reference.delete();
+        totalDeleted++;
+
+        print('Debug: Cleared Firestore data for user: $userId');
+      }
+
+      // Clear Firebase Authentication users
+      print('Debug: Clearing Firebase Authentication users...');
+      try {
+        // Note: Firebase Admin SDK is needed to delete users from Auth
+        // For now, we'll just clear the Firestore data
+        // The user will need to manually delete auth users from Firebase Console
+        print(
+          'Debug: Firestore data cleared. Please manually delete Firebase Auth users from Firebase Console.',
+        );
+      } catch (e) {
+        print('Debug: Error clearing Firebase Auth users: $e');
+      }
+
+      print(
+        'Debug: Successfully cleared all Firestore data. Total documents deleted: $totalDeleted',
+      );
+      return true;
+    } catch (e) {
+      print('Debug: Error clearing user data: $e');
+      return false;
     }
+  }
 
-    // Question 5: Want to learn skills? (No = higher risk)
-    if (answers['q5'] == 'No') score += 2;
+  // Clear Firebase Authentication users (requires Admin SDK)
+  static Future<bool> clearAllAuthUsers() async {
+    try {
+      print(
+        'Debug: This function requires Firebase Admin SDK to delete auth users.',
+      );
+      print(
+        'Debug: Please use Firebase Console to delete authentication users manually.',
+      );
+      print(
+        'Debug: Go to Firebase Console > Authentication > Users > Select All > Delete',
+      );
+      return false;
+    } catch (e) {
+      print('Debug: Error clearing auth users: $e');
+      return false;
+    }
+  }
 
-    return score;
+  // Clear data for a specific user
+  static Future<bool> clearUserData(String userId) async {
+    try {
+      print('Debug: Starting to clear data for user: $userId');
+
+      // Delete all subcollections for this user
+      final subcollections = [
+        'assessments',
+        'mood_entries',
+        'quick_mood_entries',
+        'cravingSkills',
+      ];
+
+      int totalDeleted = 0;
+
+      for (String subcollection in subcollections) {
+        final subQuery = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection(subcollection)
+            .get();
+
+        print(
+          'Debug: Found ${subQuery.docs.length} documents in $subcollection',
+        );
+
+        // Delete all documents in subcollection
+        for (var doc in subQuery.docs) {
+          await doc.reference.delete();
+          totalDeleted++;
+        }
+      }
+
+      // Delete the user document itself
+      await _firestore.collection('users').doc(userId).delete();
+      totalDeleted++;
+
+      print(
+        'Debug: Successfully cleared data for user: $userId. Total documents deleted: $totalDeleted',
+      );
+      return true;
+    } catch (e) {
+      print('Debug: Error clearing user data for $userId: $e');
+      return false;
+    }
+  }
+
+  // Add admin account to admins collection
+  static Future<bool> addAdminAccount({
+    required String email,
+    required String displayName,
+    required String role,
+  }) async {
+    try {
+      await _firestore.collection('admins').add({
+        'email': email.toLowerCase().trim(),
+        'displayName': displayName.trim(),
+        'role': role.trim(),
+        'isActive': true,
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': _auth.currentUser?.uid ?? 'system',
+      });
+      return true;
+    } catch (e) {
+      print('Error adding admin account: $e');
+      return false;
+    }
+  }
+
+  // Remove admin account from admins collection
+  static Future<bool> removeAdminAccount(String adminId) async {
+    try {
+      await _firestore.collection('admins').doc(adminId).update({
+        'isActive': false,
+        'deactivatedAt': FieldValue.serverTimestamp(),
+        'deactivatedBy': _auth.currentUser?.uid ?? 'system',
+      });
+      return true;
+    } catch (e) {
+      print('Error removing admin account: $e');
+      return false;
+    }
+  }
+
+  // Get all admin accounts
+  static Future<List<Map<String, dynamic>>> getAllAdminAccounts() async {
+    try {
+      final querySnapshot = await _firestore
+          .collection('admins')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      return querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'email': data['email'] ?? '',
+          'displayName': data['displayName'] ?? '',
+          'role': data['role'] ?? '',
+          'createdAt': data['createdAt']?.toDate(),
+        };
+      }).toList();
+    } catch (e) {
+      print('Error getting admin accounts: $e');
+      return [];
+    }
   }
 }
 
@@ -436,23 +633,16 @@ class UserDetails extends UserData {
   final List<CravingSkillUsage> cravingSkills;
 
   UserDetails({
-    required String uid,
-    required String email,
-    required String displayName,
-    required DateTime createdAt,
-    DateTime? lastLoginAt,
-    required bool isActive,
+    required super.uid,
+    required super.email,
+    required super.displayName,
+    required super.createdAt,
+    super.lastLoginAt,
+    required super.isActive,
     required this.moodEntries,
     required this.assessments,
     required this.cravingSkills,
-  }) : super(
-         uid: uid,
-         email: email,
-         displayName: displayName,
-         createdAt: createdAt,
-         lastLoginAt: lastLoginAt,
-         isActive: isActive,
-       );
+  });
 }
 
 class MoodEntry {
