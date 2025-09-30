@@ -263,30 +263,16 @@ class UserDetails extends UserData {
   final List<CravingSkillUsage> cravingSkills;
 
   UserDetails({
-    required String uid,
-    required String email,
-    required String displayName,
-    required DateTime createdAt,
-    DateTime? lastLoginAt,
-    required bool isActive,
+    required super.id,
+    required super.mail,
+    required super.isplayName,
+    required super.atedAt,
+    super.LoginAt,
+    required super..isActive,
     required this.moodEntries,
     required this.assessments,
     required this.cravingSkills,
-  }) : super(
-         uid: uid,
-         email: email,
-         displayName: displayName,
-         createdAt: createdAt,
-         lastLoginAt: lastLoginAt,
-         isActive: isActive,
-       );
-}
-
-class MoodEntry {
-  final String id;
-  final int mood;
-  final String note;
-  final DateTime timestamp;
+  })DateTime timestamp;
 
   MoodEntry({
     required this.id,

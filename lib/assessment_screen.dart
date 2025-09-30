@@ -195,8 +195,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               validator: (val) {
                 if (val == null || val.isEmpty) return 'Please enter your age';
                 final age = int.tryParse(val);
-                if (age == null || age < 0 || age > 120)
+                if (age == null || age < 0 || age > 120) {
                   return 'Enter a valid age';
+                }
                 return null;
               },
             ),

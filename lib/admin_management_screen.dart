@@ -326,7 +326,6 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         onPressed: _addAdminAccount,
         backgroundColor: Colors.red[700],
         child: const Icon(Icons.add, color: Colors.white),
-        tooltip: 'Add Admin Account',
       ),
     );
   }
