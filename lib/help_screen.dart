@@ -232,7 +232,7 @@ class _HelpScreenState extends State<HelpScreen> {
                       const Icon(Icons.psychology, color: Colors.blue, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        _isEnglish ? 'TeleManas Helpline' : 'ಟೆಲಿಮಾನಸ್ ಸಹಾಯ ಲೈನ್',
+                        _isEnglish ? 'DIMHANS TeleManas Helpline' : 'DIMHANS ಟೆಲಿಮಾನಸ್ ಸಹಾಯ ಲೈನ್',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
