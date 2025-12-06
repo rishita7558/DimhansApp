@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dimhans_app/services/api_service.dart';
+import 'package:dimhans_app/auth_service.dart';
 import 'package:intl/intl.dart';
 
 class MoodHistoryScreen extends StatefulWidget {
@@ -29,37 +29,43 @@ class _MoodHistoryScreenState extends State<MoodHistoryScreen> {
     });
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
+      if (AuthService.isLoggedIn) {
         // Get date range based on selected period
         final DateTime endDate = DateTime.now();
         final DateTime startDate = _getStartDate(endDate, _selectedPeriod);
 
-        final snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('mood_entries')
-            .where(
-              'timestamp',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
-            )
-            .where(
-              'timestamp',
-              isLessThanOrEqualTo: Timestamp.fromDate(endDate),
-            )
-            .orderBy('timestamp', descending: true)
-            .get();
+        // Fetch mood history from backend
+        // Note: Backend might need to support date filtering params,
+        // or we filter client-side for now if the dataset is small.
+        // Assuming ApiService.getMoodHistory() returns all entries for now.
+        final moodData = await ApiService.getMoodHistory();
 
+        final allEntries = moodData.map((data) {
+          return {
+            'id': data['_id'] ?? '',
+            'mood_level': data['moodLevel'] ?? 3,
+            'mood_description': data['moodDescription'] ?? '',
+            'timestamp':
+                DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now(),
+          };
+        }).toList();
+
+        // Filter by date range
         setState(() {
-          _moodEntries = snapshot.docs.map((doc) {
-            final data = doc.data();
-            return {
-              'id': doc.id,
-              'mood_level': data['mood_level'] ?? 3,
-              'mood_description': data['mood_description'] ?? '',
-              'timestamp': (data['timestamp'] as Timestamp).toDate(),
-            };
+          _moodEntries = allEntries.where((entry) {
+            final timestamp = entry['timestamp'] as DateTime;
+            return timestamp.isAfter(startDate) &&
+                timestamp.isBefore(
+                  endDate.add(const Duration(days: 1)),
+                ); // Add 1 day to include end date fully
           }).toList();
+
+          // Sort by timestamp descending
+          _moodEntries.sort(
+            (a, b) => (b['timestamp'] as DateTime).compareTo(
+              a['timestamp'] as DateTime,
+            ),
+          );
         });
 
         _calculateMoodStats();

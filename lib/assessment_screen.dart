@@ -3,7 +3,7 @@ import 'package:dimhans_app/learn_screen.dart'; // Added import for LearnScreen
 import 'package:url_launcher/url_launcher.dart';
 import 'mood_tracker_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dimhans_app/services/api_service.dart';
 
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
@@ -90,18 +90,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
         print('Debug: Calculated score: $score');
 
-        // Save to Firestore
-        final docRef = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('assessments')
-            .add({
-              'score': score,
-              'answers': _answers,
-              'timestamp': FieldValue.serverTimestamp(),
-            });
+        // Save to Backend
+        await ApiService.addAssessment({'score': score, 'answers': _answers});
 
-        print('Debug: Assessment saved successfully with ID: ${docRef.id}');
+        print('Debug: Assessment saved successfully to backend');
 
         // Show success message
         if (mounted) {

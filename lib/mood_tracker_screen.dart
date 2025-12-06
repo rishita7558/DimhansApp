@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dimhans_app/services/api_service.dart';
+import 'package:dimhans_app/auth_service.dart';
 
 class MoodTrackerScreen extends StatefulWidget {
   final Map<String, dynamic> assessmentAnswers;
@@ -430,21 +430,15 @@ class _MoodTrackerScreenState extends State<MoodTrackerScreen> {
     });
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // Save to Firestore
-        final docRef = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('mood_entries')
-            .add({
-              'mood_level': _currentMood,
-              'mood_description': _moodDescription,
-              'triggers': _selectedTriggers,
-              'coping_strategies': _selectedCopingStrategies,
-              'timestamp': FieldValue.serverTimestamp(),
-              'assessment_data': widget.assessmentAnswers,
-            });
+      if (AuthService.isLoggedIn) {
+        // Save to Backend
+        await ApiService.addMoodEntry({
+          'moodLevel': _currentMood,
+          'moodDescription': _moodDescription,
+          'triggers': _selectedTriggers,
+          'copingStrategies': _selectedCopingStrategies,
+          'assessmentData': widget.assessmentAnswers,
+        });
 
         // Save to local storage for offline access
         final prefs = await SharedPreferences.getInstance();

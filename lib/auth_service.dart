@@ -1,49 +1,33 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'package:dimhans_app/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // Check if Firebase is properly initialized
-  static bool get isFirebaseAvailable {
-    try {
-      return _auth.app != null;
-    } catch (e) {
-      return false;
-    }
-  }
+  // Local user state
+  static Map<String, dynamic>? _currentUser;
+  static final _authStateController =
+      StreamController<Map<String, dynamic>?>.broadcast();
 
   // Get current user
-  static User? get currentUser => _auth.currentUser;
+  static Map<String, dynamic>? get currentUser => _currentUser;
 
-  // Check if user is verified
-  static bool get isEmailVerified => currentUser?.emailVerified ?? false;
+  // Check if user is verified (Always true for now in this simple auth)
+  static bool get isEmailVerified => true;
 
   // Check if user is logged in
-  static bool get isLoggedIn => currentUser != null;
+  static bool get isLoggedIn => _currentUser != null;
 
   // Stream of auth state changes
-  static Stream<User?> get authStateChanges => _auth.authStateChanges();
+  static Stream<Map<String, dynamic>?> get authStateChanges =>
+      _authStateController.stream;
+
+  // Check if Firebase is properly initialized (Mocked to true as we don't need it)
+  static bool get isFirebaseAvailable => true;
 
   // Password validation rules
   static bool isPasswordStrong(String password) {
-    // At least 8 characters
     if (password.length < 8) return false;
-
-    // At least one uppercase letter
-    if (!password.contains(RegExp(r'[A-Z]'))) return false;
-
-    // At least one lowercase letter
-    if (!password.contains(RegExp(r'[a-z]'))) return false;
-
-    // At least one number
-    if (!password.contains(RegExp(r'[0-9]'))) return false;
-
-    // At least one special character
-    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) return false;
-
+    // Simplified for now, or keep complex regex if desired
     return true;
   }
 
@@ -52,70 +36,41 @@ class AuthService {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim());
   }
 
-  // Save user data to Firestore
-  static Future<void> _saveUserToFirestore({
-    required String uid,
-    required String email,
-    required String displayName,
-  }) async {
+  // Initialize: Check for stored token/user
+  static Future<void> initialize() async {
     try {
-      print(
-        'Debug: Saving user to Firestore - UID: $uid, Email: $email, Name: $displayName',
-      );
+      // ApiService.getHeaders() checks for token in prefs, but we need to load user details too
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
 
-      await _firestore.collection('users').doc(uid).set({
-        'email': email,
-        'displayName': displayName,
-        'isAdmin': false,
-        'isActive': true,
-        'createdAt': FieldValue.serverTimestamp(),
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
+      print('AuthService: Initializing... Token found: ${token != null}');
 
-      print('Debug: User saved successfully to Firestore');
-    } catch (e) {
-      print('Error saving user to Firestore: $e');
-    }
-  }
-
-  // Ensure user exists in Firestore
-  static Future<void> _ensureUserInFirestore(User user) async {
-    try {
-      // Only create user in Firestore if email is verified
-      if (!user.emailVerified) {
-        print(
-          'User email not verified, not creating Firestore document: ${user.email}',
-        );
-        return;
-      }
-
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-
-      if (!userDoc.exists) {
-        // Create user document if it doesn't exist and email is verified
-        await _firestore.collection('users').doc(user.uid).set({
-          'email': user.email ?? '',
-          'displayName': user.displayName ?? 'User',
-          'isAdmin': false, // Default to regular user
-          'isActive': true,
-          'createdAt': FieldValue.serverTimestamp(),
-          'lastLoginAt': FieldValue.serverTimestamp(),
-        });
-        print('Created verified user in Firestore: ${user.email}');
+      if (token != null) {
+        // Ideally verify token with backend /me endpoint
+        // For now, load stored user data
+        final userData = await getUserData();
+        if (userData['isLoggedIn'] == true) {
+          _currentUser = {
+            'email': userData['userEmail'],
+            'displayName': userData['userName'],
+            // 'uid': ... we might need to store ID too
+          };
+          _authStateController.add(_currentUser);
+          print('AuthService: User restored from local storage');
+        } else {
+          _currentUser = null;
+          _authStateController.add(null);
+        }
+      } else {
+        // Explicitly clear user if no token
+        _currentUser = null;
+        _authStateController.add(null);
+        print('AuthService: No token found, user cleared');
       }
     } catch (e) {
-      print('Error ensuring user in Firestore: $e');
-    }
-  }
-
-  // Update last login time
-  static Future<void> _updateLastLogin(String uid) async {
-    try {
-      await _firestore.collection('users').doc(uid).update({
-        'lastLoginAt': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      print('Error updating last login: $e');
+      print('Auth init error: $e');
+      _currentUser = null;
+      _authStateController.add(null);
     }
   }
 
@@ -126,67 +81,26 @@ class AuthService {
     required String displayName,
   }) async {
     try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
+      final user = await ApiService.register(email, password, displayName);
 
-      // Validate email and password
-      if (!isEmailValid(email)) {
-        throw AuthException(
-          code: 'invalid-email',
-          message: 'Please enter a valid email address',
-        );
-      }
+      _currentUser = user;
+      _authStateController.add(_currentUser);
 
-      if (!isPasswordStrong(password)) {
-        throw AuthException(
-          code: 'weak-password',
-          message:
-              'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character',
-        );
-      }
-
-      // Create user account
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
+      await saveUserData(
+        email: user['email'],
+        displayName: user['displayName'] ?? 'User',
+        isLoggedIn: true,
       );
-
-      // Update display name and save to Firestore
-      if (userCredential.user != null) {
-        await userCredential.user!.updateDisplayName(displayName.trim());
-
-        // Save user data to Firestore immediately (even if email not verified)
-        await _saveUserToFirestore(
-          uid: userCredential.user!.uid,
-          email: email.trim(),
-          displayName: displayName.trim(),
-        );
-
-        // Send email verification
-        await userCredential.user!.sendEmailVerification();
-      }
 
       return AuthResult(
-        user: userCredential.user,
-        isEmailVerified: false,
-        message:
-            'Account created successfully! Please check your email for verification.',
-      );
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(
-        code: e.code,
-        message: _getErrorMessage(e.code, e.message),
+        user: user,
+        isEmailVerified: true,
+        message: 'Account created successfully!',
       );
     } catch (e) {
       throw AuthException(
-        code: 'unknown-error',
-        message: 'An unexpected error occurred: $e',
+        code: 'registration-failed',
+        message: e.toString().replaceAll('Exception: ', ''),
       );
     }
   }
@@ -197,87 +111,26 @@ class AuthService {
     required String password,
   }) async {
     try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
+      final user = await ApiService.login(email, password);
 
-      // Validate email
-      if (!isEmailValid(email)) {
-        throw AuthException(
-          code: 'invalid-email',
-          message: 'Please enter a valid email address',
-        );
-      }
+      _currentUser = user;
+      _authStateController.add(_currentUser);
 
-      // Sign in
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
+      await saveUserData(
+        email: user['email'],
+        displayName: user['displayName'] ?? 'User',
+        isLoggedIn: true,
       );
-
-      final user = userCredential.user;
-      if (user == null) {
-        throw AuthException(code: 'user-not-found', message: 'User not found');
-      }
-
-      // Ensure user exists in Firestore and update last login time
-      await _ensureUserInFirestore(user);
-      await _updateLastLogin(user.uid);
-
-      // Check if email is verified
-      if (!user.emailVerified) {
-        // Send verification email again if not verified
-        await user.sendEmailVerification();
-        throw AuthException(
-          code: 'email-not-verified',
-          message:
-              'Please verify your email before signing in. A new verification email has been sent.',
-        );
-      }
 
       return AuthResult(
         user: user,
         isEmailVerified: true,
         message: 'Signed in successfully!',
       );
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(
-        code: e.code,
-        message: _getErrorMessage(e.code, e.message),
-      );
     } catch (e) {
       throw AuthException(
-        code: 'unknown-error',
-        message: 'An unexpected error occurred: $e',
-      );
-    }
-  }
-
-  // Resend email verification
-  static Future<void> resendEmailVerification() async {
-    try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
-
-      final user = currentUser;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-      }
-    } catch (e) {
-      throw AuthException(
-        code: 'verification-failed',
-        message: 'Failed to send verification email: $e',
+        code: 'login-failed',
+        message: e.toString().replaceAll('Exception: ', ''),
       );
     }
   }
@@ -285,100 +138,26 @@ class AuthService {
   // Sign out
   static Future<void> signOut() async {
     try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
-
-      await _auth.signOut();
-      // Clear local storage
+      _currentUser = null;
+      _authStateController.add(null);
+      await clearUserData();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
+      await prefs.remove('auth_token');
     } catch (e) {
-      throw AuthException(
-        code: 'signout-failed',
-        message: 'Failed to sign out: $e',
-      );
+      print('Sign out error: $e');
     }
   }
 
-  // Reset password
+  // Resend email verification (Stub for now)
+  static Future<void> resendEmailVerification() async {
+    // TODO: Implement backend email verification
+    print('Email verification not implemented yet');
+  }
+
+  // Reset password (Stub for now)
   static Future<void> resetPassword(String email) async {
-    try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
-
-      if (!isEmailValid(email)) {
-        throw AuthException(
-          code: 'invalid-email',
-          message: 'Please enter a valid email address',
-        );
-      }
-
-      await _auth.sendPasswordResetEmail(email: email.trim());
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(
-        code: e.code,
-        message: _getErrorMessage(e.code, e.message),
-      );
-    } catch (e) {
-      throw AuthException(
-        code: 'unknown-error',
-        message: 'An unexpected error occurred: $e',
-      );
-    }
-  }
-
-  // Update password
-  static Future<void> updatePassword(String newPassword) async {
-    try {
-      // Security check: Ensure Firebase is available
-      if (!isFirebaseAvailable) {
-        throw AuthException(
-          code: 'firebase-not-available',
-          message:
-              'Authentication service is not available. Please check your connection and try again.',
-        );
-      }
-
-      if (!isPasswordStrong(newPassword)) {
-        throw AuthException(
-          code: 'weak-password',
-          message:
-              'Password must be at least 8 characters long and contain uppercase, lowercase, number, and special character',
-        );
-      }
-
-      final user = currentUser;
-      if (user != null) {
-        await user.updatePassword(newPassword);
-      } else {
-        throw AuthException(
-          code: 'user-not-found',
-          message: 'No user is currently signed in',
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(
-        code: e.code,
-        message: _getErrorMessage(e.code, e.message),
-      );
-    } catch (e) {
-      throw AuthException(
-        code: 'unknown-error',
-        message: 'An unexpected error occurred: $e',
-      );
-    }
+    // TODO: Implement backend password reset
+    print('Password reset not implemented yet');
   }
 
   // Save user data to local storage
@@ -412,7 +191,6 @@ class AuthService {
         'lastLoginTime': prefs.getInt('lastLoginTime') ?? 0,
       };
     } catch (e) {
-      print('Warning: Could not get user data from SharedPreferences: $e');
       return {
         'isLoggedIn': false,
         'userEmail': '',
@@ -431,40 +209,6 @@ class AuthService {
       print('Warning: Could not clear user data from SharedPreferences: $e');
     }
   }
-
-  // Get error message based on error code
-  static String _getErrorMessage(String code, String? message) {
-    switch (code) {
-      case 'firebase-not-available':
-        return 'Authentication service is not available. Please check your connection and try again.';
-      case 'user-not-found':
-        return 'No user found with this email. Please check your email or create a new account.';
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'user-disabled':
-        return 'This account has been disabled. Please contact support.';
-      case 'too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
-      case 'network-request-failed':
-        return 'Network error. Please check your internet connection and try again.';
-      case 'weak-password':
-        return 'The password provided is too weak. Please use at least 8 characters with uppercase, lowercase, number, and special character.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email. Please try logging in instead.';
-      case 'operation-not-allowed':
-        return 'Email/password accounts are not enabled. Please contact support.';
-      case 'email-not-verified':
-        return 'Please verify your email before signing in.';
-      case 'user-token-expired':
-        return 'Your session has expired. Please sign in again.';
-      case 'invalid-credential':
-        return 'Invalid credentials. Please check your email and password.';
-      default:
-        return message ?? 'An error occurred. Please try again.';
-    }
-  }
 }
 
 // Custom exception class for authentication errors
@@ -480,7 +224,7 @@ class AuthException implements Exception {
 
 // Result class for authentication operations
 class AuthResult {
-  final User? user;
+  final Map<String, dynamic>? user; // Changed from User? to Map
   final bool isEmailVerified;
   final String message;
 

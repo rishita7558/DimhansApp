@@ -40,9 +40,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen>
         _userDetails = userDetails;
         _isLoading = false;
       });
-
-      // Debug: Check assessments for this user
-      await AdminService.debugUserAssessments(widget.userId);
     } catch (e) {
       setState(() {
         _isLoading = false;

@@ -44,13 +44,13 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
 
-      print('User logged in successfully: ${result.user?.uid}');
+      print('User logged in successfully: ${result.user?['id']}');
 
       if (result.user != null && result.isEmailVerified) {
         // Save user data to local storage
         await AuthService.saveUserData(
-          email: result.user!.email ?? '',
-          displayName: result.user!.displayName ?? 'User',
+          email: result.user?['email'] ?? '',
+          displayName: result.user?['displayName'] ?? 'User',
           isLoggedIn: true,
         );
 
@@ -58,8 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
           print('Navigating to WelcomeScreen...');
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (_) =>
-                  WelcomeScreen(userName: result.user!.displayName ?? 'User'),
+              builder: (_) => WelcomeScreen(
+                userName: result.user?['displayName'] ?? 'User',
+              ),
             ),
           );
         }

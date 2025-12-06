@@ -48,7 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         displayName: _nameController.text.trim(),
       );
 
-      print('User created successfully: ${result.user?.uid}');
+      print('User created successfully: ${result.user?['id']}');
 
       if (mounted) {
         // Show success message

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dimhans_app/services/api_service.dart';
 import 'admin_service.dart';
 import 'user_details_screen.dart';
 import 'admin_management_screen.dart';
@@ -12,7 +12,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<UserData> _users = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
@@ -34,21 +33,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _loadRecentMoodEntries() async {
     try {
-      final querySnapshot = await _firestore
-          .collectionGroup('mood_entries')
-          .orderBy('timestamp', descending: true)
-          .limit(10)
-          .get();
+      final entries = await ApiService.getRecentMoodEntries();
 
-      _recentMoodEntries = querySnapshot.docs.map((doc) {
-        final data = doc.data();
+      _recentMoodEntries = entries.map((data) {
         return {
-          'id': doc.id,
-          'mood_level': data['mood_level'] ?? 0,
-          'mood_description': data['mood_description'] ?? '',
+          'id': data['_id'] ?? '',
+          'mood_level': data['moodLevel'] ?? 0,
+          'mood_description': data['moodDescription'] ?? '',
           'triggers': data['triggers'] ?? [],
-          'coping_strategies': data['coping_strategies'] ?? [],
-          'timestamp': data['timestamp']?.toDate() ?? DateTime.now(),
+          'coping_strategies': data['copingStrategies'] ?? [],
+          'timestamp':
+              DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now(),
           'user_email': data['user_email'] ?? 'Unknown',
         };
       }).toList();
@@ -64,16 +59,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
 
     try {
-      print('Loading users from Firestore...');
-
-      // Debug: Check what's actually in Firestore
-      final querySnapshot = await _firestore.collection('users').get();
-      print(
-        'Raw Firestore query result: ${querySnapshot.docs.length} documents',
-      );
-      for (var doc in querySnapshot.docs) {
-        print('Document ID: ${doc.id}, Data: ${doc.data()}');
-      }
+      print('Loading users from Backend...');
 
       final users = await AdminService.getAllUsers();
       print('Loaded ${users.length} users from AdminService');
@@ -125,6 +111,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    }
+  }
+
+  Future<void> _syncData() async {
+    setState(() => _isLoading = true);
+    try {
+      await ApiService.syncData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data sync complete!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Sync error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -493,6 +508,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _syncData,
+                  icon: const Icon(Icons.sync),
+                  label: const Text('Sync Data'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[700],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 8),
               ],
             ),

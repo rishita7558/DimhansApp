@@ -47,14 +47,14 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     });
 
     try {
-      // Create admin account using Firebase Auth
+      // Create admin account using Backend API
       final userCredential = await AdminService.createAdminAccount(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _displayNameController.text.trim(),
       );
 
-      if (userCredential != null) {
+      if (userCredential == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

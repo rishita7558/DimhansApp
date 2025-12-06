@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'login_screen.dart';
 import 'welcome_screen.dart';
-import 'migrate_users.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -64,62 +63,26 @@ class _AuthWrapperState extends State<AuthWrapper>
       await Future.delayed(const Duration(milliseconds: 300));
       _scaleController.forward();
 
-      // Security check: Ensure Firebase is available before proceeding
-      if (!AuthService.isFirebaseAvailable) {
-        print(
-          'AuthWrapper: Firebase is not available - authentication cannot work',
-        );
+      // Initialize Auth Service (check for stored token)
+      await AuthService.initialize();
+
+      if (AuthService.isLoggedIn) {
+        print('AuthWrapper: User is logged in');
+
+        final user = AuthService.currentUser;
+        setState(() {
+          _isLoggedIn = true;
+          _userName = user?['displayName'] ?? 'User';
+          _userEmail = user?['email'] ?? '';
+          _isLoading = false;
+        });
+      } else {
+        print('AuthWrapper: User is not logged in');
         setState(() {
           _isLoggedIn = false;
           _isLoading = false;
         });
-        return;
       }
-
-      // Check Firebase Auth - this is the ONLY authentication method
-      try {
-        final firebaseUser = AuthService.currentUser;
-        print('AuthWrapper: Firebase user: ${firebaseUser?.uid ?? 'null'}');
-
-        if (firebaseUser != null && AuthService.isEmailVerified) {
-          print('AuthWrapper: User is logged in and verified via Firebase');
-
-          // Migrate user to Firestore if not already there
-          await UserMigration.migrateUser(firebaseUser);
-
-          setState(() {
-            _isLoggedIn = true;
-            _userName = firebaseUser.displayName ?? 'User';
-            _userEmail = firebaseUser.email ?? '';
-            _isLoading = false;
-          });
-          return;
-        } else if (firebaseUser != null && !AuthService.isEmailVerified) {
-          print('AuthWrapper: User exists but email not verified');
-          // User exists but email not verified, redirect to login
-          setState(() {
-            _isLoggedIn = false;
-            _isLoading = false;
-          });
-          return;
-        }
-      } catch (e) {
-        print('AuthWrapper: Firebase not available: $e');
-        // If Firebase is not available, authentication cannot work
-        // This ensures security - no fallback to local storage
-        print(
-          'AuthWrapper: Firebase authentication required - no fallback available',
-        );
-      }
-
-      // No fallback authentication - user must authenticate through Firebase
-      print(
-        'AuthWrapper: User is not logged in - Firebase authentication required',
-      );
-      setState(() {
-        _isLoggedIn = false;
-        _isLoading = false;
-      });
     } catch (e) {
       print('AuthWrapper: Error checking auth status: $e');
       setState(() {
@@ -137,11 +100,6 @@ class _AuthWrapperState extends State<AuthWrapper>
 
     if (_isLoading) {
       return _buildLoadingScreen();
-    }
-
-    // Check if Firebase is available
-    if (!AuthService.isFirebaseAvailable) {
-      return _buildFirebaseErrorScreen();
     }
 
     if (_isLoggedIn) {
@@ -250,94 +208,6 @@ class _AuthWrapperState extends State<AuthWrapper>
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFirebaseErrorScreen() {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF3EFFF),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Error Icon
-                Container(
-                  padding: const EdgeInsets.all(30),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.red.withOpacity(0.1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.error_outline,
-                    size: 120,
-                    color: Colors.red[700],
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Error Title
-                Center(
-                  child: Text(
-                    'Authentication Service Unavailable',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red[700],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Error Message
-                Center(
-                  child: Text(
-                    'The authentication service is currently not available. This could be due to:\n\n• Network connectivity issues\n• Firebase configuration problems\n• Service maintenance\n\nPlease check your internet connection and try again later.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Retry Button
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    _checkAuthStatus();
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[700],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
               ],
