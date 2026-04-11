@@ -2,7 +2,7 @@
 
 plugins {
     // No application or android plugins here!
-    id("dev.flutter.flutter-gradle-plugin") version "1.0.0" apply false
+    id("dev.flutter.flutter-gradle-plugin") apply false
 }
 
 allprojects {
