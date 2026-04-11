@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Replace with your actual backend URL (e.g., http://10.0.2.2:5000 for Android emulator)
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'https://dimhans-app.vercel.app/api';
 
   // Store token in memory for session (better to use SharedPreferences for persistence)
   static String? _token;
