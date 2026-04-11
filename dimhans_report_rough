@@ -1,0 +1,66 @@
+# Extensive Project Report: DimhansApp (DIMHANS Alcohol Support)
+
+## 📌 Project Overview
+**DimhansApp** is a bilingual (English and Kannada) Flutter-based mobile application designed to provide comprehensive alcohol addiction support and recovery management. It facilitates emotional self-awareness, crisis management, coping skill development, and community support. By integrating directly with Firebase, the app provides real-time cloud data storage and offline-first capabilities.
+
+## 🏗 System Architecture & Technology Stack
+
+### Core Frameworks & Languages
+- **Engine**: Flutter SDK (targeting version ^3.8.1)
+- **Language**: Dart
+- **Target Platforms**: Primarily compiled for Android (Minimum SDK level automatically upgraded to `23` / Android 6.0 Marshmallow for modern library support), heavily relying on Android Gradle Plugin.
+
+### Core Libraries & Plugins
+- **Firebase Suite**: `firebase_core`, `firebase_auth` (version ^5.7.0). Firebase handles user authentication, data synchronization, and cloud storage.
+- **State Management**: `provider` (^6.1.5). Utilized for clean, scalable state propagation throughout the extensive widget tree.
+- **Data Persistence**: `shared_preferences` (^2.2.2). Powers offline fallback storage ensuring the app remains actively usable without internet connectivity.
+- **Networking**: `http` (^1.2.0) for external REST endpoints.
+- **UX / UI Utilities**: 
+  - `url_launcher` for deep links and web-views (helpful in 'Learn' and 'Community' screens).
+  - `cupertino_icons` and `uses-material-design` for platform-adaptive UI features.
+  - `intl` for localization (essential for bilingual functionality and date formats).
+
+## 📱 Application Flow & Screen Topology
+The application is structured around a central `MainNavigation` component featuring a Bottom Navigation Bar.
+
+### 1. Authentication & Onboarding
+- **`auth_wrapper.dart`**: Root listener navigating users to login/home based on authentication state.
+- **`welcome_screen.dart` / `login_screen.dart` / `register_screen.dart`**: Secure entry points.
+- **`email_verification_screen.dart` & `forgot_password_screen.dart`**: Full suite of credential recovery and identity validation layers.
+
+### 2. Core Navigation (`main.dart` -> `MainNavigation`)
+- 🏠 **Home (`home_screen.dart`)**: Quick access dashboard featuring prompt links for assessments and rapid mood checks.
+- 📖 **Learn (`learn_screen.dart`)**: Educational portal divided into public informational tabs and specific modules.
+- 🤝 **Help (`help_screen.dart`)**: Resource center for emergency support or professional contact details.
+- 🧘 **Craving Skills (`craving_skills_screen.dart`)**: Actionable techniques for users experiencing triggers.
+- 📊 **Mood History (`mood_history_screen.dart` & `mood_tracker_screen.dart`)**: Analytics center. See deep-dive below.
+- 👥 **Community (`community_screen.dart`)**: Peer support section.
+- ℹ️ **About (`about_screen.dart`)**: Detailed information about DIMHANS and key personnel (Directors, Doctors profiles bundled in the `assets/` directory).
+
+### 3. Assessment Logic
+- **`assessment_screen.dart`**: A critical flow where users answer a self-assessment questionnaire. If the user indicates alcohol consumption, the flow explicitly reveals context-aware tracking features (like the Mood Tracker).
+
+### 4. Admin Workflows
+- **`admin_dashboard_screen.dart` & `admin_management_screen.dart`**: Segregated flows controlled by `admin_service.dart` allowing administrators to overview data, push learn content, or monitor system health without exposing this to public users.
+
+## 🔍 Feature Spotlight: The Mood Tracker
+The Mood Tracker is one of the most prominent features of the project, deeply integrated with the Assessment results.
+
+### Mechanics & Offline First
+It relies on a hybrid DB model. When offline, `SharedPreferences` manages pending inputs. When connectivity resumes, data syncs safely to Firebase Firestore.
+- **Input points**: Users track mood on a 5-point scale.
+- **Triggers**: Selection logic allows capturing causes leading to emotional states (e.g., Financial problems, Social pressure, Boredom).
+- **Coping Strategy**: Tracks the efficacy of techniques (like Meditation, Nature Walks).
+- **Analytics Visualization**: The app implements bespoke charts detailing 7/30/90-day progress graphs and frequency analysis mapping strategies against success rates.
+
+## 🛠 Recent Build & Compilation Updates
+
+### Android Gradle Upgrades
+A recent infrastructure adjustment significantly fortified Android compatibility:
+1. **Plugin Loader Decoupling**: We resolved a plugin classpath clash in Gradle by utilizing Flutter's dynamic `flutter-plugin-loader` system inside `settings.gradle.kts`. A hardcoded `version "1.0.0"` constraint in `app/build.gradle.kts` was removed.
+2. **MinSDK Alignment**: Upgraded the Android minimum compile threshold to `23`. This was mandatory because `firebase-auth:23.2.1` internal dependencies enforce a minimum SDK of 23. This change guarantees flawless integration with Firebase moving forward.
+3. **Artifact Output**: The application was securely compiled to a Release `.apk` stored locally at `build/outputs/flutter-apk/app-release.apk`. All modifications tracking these configuration updates have been seamlessly committed and pushed to the `main` GitHub repository.
+
+---
+> [!NOTE] 
+> **Bilingual Requirement**: Extensive Kannada localization is implemented for form labels, headers, and UI states. Developers touching UI elements moving forward must consider maintaining translations in both languages as established by the project architecture.
