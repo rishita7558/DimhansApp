@@ -51,6 +51,11 @@ app.use('/api/assessments', assessmentRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+// Export for Vercel
+module.exports = app;
